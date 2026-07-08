@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: azure-quiz-backend
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200
+
+logging:
+  level:
+    com.alderichoarau.azurequiz: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: default
+  datasource:
+    url: jdbc:postgresql://localhost:5432/quizz
+    username: quizz
+    password: quizz

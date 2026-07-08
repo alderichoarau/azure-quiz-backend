@@ -1,0 +1,46 @@
+package com.alderichoarau.azurequiz.controller;
+
+import com.alderichoarau.azurequiz.dto.AnswerResultDto;
+import com.alderichoarau.azurequiz.dto.CreateQuizSessionRequest;
+import com.alderichoarau.azurequiz.dto.QuizResultDto;
+import com.alderichoarau.azurequiz.dto.QuizSessionDto;
+import com.alderichoarau.azurequiz.dto.SubmitAnswerRequest;
+import com.alderichoarau.azurequiz.service.QuizSessionService;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/quiz-sessions")
+@RequiredArgsConstructor
+public class QuizSessionController {
+
+    private final QuizSessionService quizSessionService;
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public QuizSessionDto createSession(@Valid @RequestBody CreateQuizSessionRequest request) {
+        return quizSessionService.createSession(request);
+    }
+
+    @PostMapping("/{sessionId}/questions/{questionId}/answer")
+    public AnswerResultDto submitAnswer(
+            @PathVariable UUID sessionId,
+            @PathVariable UUID questionId,
+            @Valid @RequestBody SubmitAnswerRequest request) {
+        return quizSessionService.submitAnswer(sessionId, questionId, request);
+    }
+
+    @GetMapping("/{sessionId}/result")
+    public QuizResultDto getResult(@PathVariable UUID sessionId) {
+        return quizSessionService.getResult(sessionId);
+    }
+}
