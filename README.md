@@ -83,3 +83,11 @@ associated modules/questions (a dedicated Flyway migration, generated from the s
 - Provisioning Azure infrastructure (App Service, Static Web App, PostgreSQL Flexible Server).
 - CI/CD deployment workflow to Azure.
 - Importing the real question content (supplied separately, converted into Flyway migrations).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+Copyright (c) 2026 Alderic Hoarau. All rights reserved. See [LICENSE](LICENSE).
