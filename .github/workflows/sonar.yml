@@ -1,0 +1,55 @@
+name: Run Sonar Cloud scan
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  JAVA_VERSION: 17
+  JAVA_DISTRIBUTION: temurin
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_PROJECT_KEY: alderichoarau_azure-quiz-backend
+  SONAR_ORGANIZATION: alderichoarau
+  SONAR_HOST_URL: https://sonarcloud.io
+
+jobs:
+  sonar-scan:
+    name: Sonar scan
+    runs-on: ubuntu-latest
+    steps:
+      # Documentation: https://github.com/actions/checkout
+      - name: "Checkout repository"
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # Documentation: https://github.com/actions/setup-java
+      - name: "Setup Java"
+        id: setup-java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Cache Sonar packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Build and analyze
+        run: >
+          mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
+          -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
+          -Dsonar.host.url=${{ env.SONAR_HOST_URL }}
+
