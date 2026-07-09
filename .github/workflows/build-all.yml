@@ -1,0 +1,48 @@
+# -----------------------------------------------------------------------------------------------
+# This workflow built the project on every pull request and on every manual trigger.
+# This workflow is used in pull request as a required check.
+# -----------------------------------------------------------------------------------------------
+name: GitHub - Build all
+run-name: Build all modules
+
+on:
+  workflow_dispatch:
+  merge_group:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: 17
+  JAVA_DISTRIBUTION: temurin
+  MVNW: ${{ github.workspace }}/mvnw
+
+  permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      # Documentation: https://github.com/actions/checkout
+      - name: "Checkout repository"
+        uses: actions/checkout@v6
+
+      # Documentation: https://github.com/actions/setup-java
+      - name: "Setup Java"
+        id: setup-java
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: "Build with Maven"
+        if: steps.setup-java.outcome == 'success'
+        run: |
+          ${MVNW} -B clean package
