@@ -9,14 +9,14 @@ like AZ-104 can be added later with no schema change — see "Data model" below)
 
 ## Stack
 
-- Java 17, Spring Boot 3.5.x, Maven
+- Java 21, Spring Boot 3.5.x, Maven
 - Spring Web, Spring Data JPA, PostgreSQL, Flyway, Bean Validation, Lombok, Actuator
 - springdoc-openapi (Swagger UI)
 - Tests: JUnit 5, Mockito, AssertJ
 
 ## Running locally
 
-Prerequisites: JDK 17, a local PostgreSQL instance (database `quizz`, user/password `quizz` — see the
+Prerequisites: JDK 21, a local PostgreSQL instance (database `quizz`, user/password `quizz` — see the
 `default` profile in `application.yml`, adjust if needed).
 
 ```bash

@@ -18,7 +18,7 @@ permissions:
   pull-requests: write
 
 env:
-  JAVA_VERSION: 17
+  JAVA_VERSION: 21
   JAVA_DISTRIBUTION: temurin
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   SONAR_PROJECT_KEY: alderichoarau_azure-quiz-backend
