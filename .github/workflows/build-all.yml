@@ -20,7 +20,7 @@ env:
   JAVA_DISTRIBUTION: temurin
   MVNW: ${{ github.workspace }}/mvnw
 
-  permissions:
+permissions:
   contents: read
   pull-requests: write
   checks: write
