@@ -1,0 +1,14 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) : %msg %n
+            </pattern>
+        </encoder>
+    </appender>
+    <logger name="org.hibernate" level="ERROR"/>
+    <logger name="com.airfrance.loma" level="INFO"/>
+    <logger name="org.springframework.messaging" level="ERROR"/>
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
