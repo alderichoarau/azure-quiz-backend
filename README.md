@@ -6,6 +6,10 @@ like AZ-104 can be added later with no schema change — see "Data model" below)
 ## Last analysis
 [![GitHub - Sonar Cloud Analysis](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml)
 [![GitHub - Build all](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 
 ## Stack
 
