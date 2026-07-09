@@ -1,4 +1,10 @@
-name: Run Sonar Cloud scan
+# -----------------------------------------------------------------------------------------------
+# GitHub Action to run SonarCloud analysis on the codebase.
+# Automated and required for pull requests (PRs).
+# -----------------------------------------------------------------------------------------------
+name: GitHub - Sonar Cloud Analysis
+run-name: Sonar Cloud Analysis - ${{ github.ref_name}}
+
 
 on:
   push:
