@@ -10,6 +10,7 @@ like AZ-104 can be added later with no schema change — see "Data model" below)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 
 ## Stack
 
