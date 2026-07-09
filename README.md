@@ -3,6 +3,10 @@
 Spring Boot REST API for the Microsoft Azure certifications revision app (AZ-900 to start, other certifications
 like AZ-104 can be added later with no schema change — see "Data model" below).
 
+## Last analysis
+[![GitHub - Sonar Cloud Analysis](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml)
+[![GitHub - Build all](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml)
+
 ## Stack
 
 - Java 17, Spring Boot 3.5.x, Maven
