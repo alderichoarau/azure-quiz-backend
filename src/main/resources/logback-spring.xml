@@ -6,7 +6,6 @@
         </encoder>
     </appender>
     <logger name="org.hibernate" level="ERROR"/>
-    <logger name="com.airfrance.loma" level="INFO"/>
     <logger name="org.springframework.messaging" level="ERROR"/>
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
