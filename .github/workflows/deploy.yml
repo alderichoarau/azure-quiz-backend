@@ -1,0 +1,94 @@
+# -----------------------------------------------------------------------------------------------
+# Deploys the built jar to the Java App Service provisioned by the azure-infra-terraform repo.
+#
+# The App Service's name is never hardcoded here: it embeds the learner's owner id
+# (app-java-<owner>-tf), which this repo has no reason to know. Instead, the workflow looks the
+# resource up by tag (owner + environment + component=quiz-backend) — component matters because
+# the same Resource Group also holds the Python TP's App Service, which would otherwise match on
+# owner/environment alone.
+# -----------------------------------------------------------------------------------------------
+name: Deploy backend
+run-name: "Deploy backend · ${{ inputs.environment }} · @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (matches the `environment` tag set by Terraform)"
+        required: true
+        type: choice
+        options:
+          - nonprod
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  JAVA_VERSION: 21
+  JAVA_DISTRIBUTION: temurin
+  MVNW: ${{ github.workspace }}/mvnw
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: "Build jar"
+        run: ${MVNW} -B clean package
+
+      - name: "Azure Login (OIDC)"
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "Find App Service by tag"
+        id: find-app
+        run: |
+          NAME=$(az resource list \
+            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
+            --resource-type "Microsoft.Web/sites" \
+            --tag "component=quiz-backend" \
+            --query "[?tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            -o tsv)
+
+          if [ -z "$NAME" ]; then
+            echo "::error::No App Service found with owner=${{ secrets.AZURE_OWNER }}, environment=${{ inputs.environment }}, component=quiz-backend in resource group ${{ secrets.AZURE_RG_NAME }}. Has terraform apply run for this environment?"
+            exit 1
+          fi
+
+          echo "Found: $NAME"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: "Deploy jar to App Service"
+        run: |
+          JAR_PATH=$(find target -maxdepth 1 -name "*.jar" ! -name "*.original" | head -n1)
+          if [ -z "$JAR_PATH" ]; then
+            echo "::error::No jar found under target/ — did the build step succeed?"
+            exit 1
+          fi
+          echo "Deploying $JAR_PATH to ${{ steps.find-app.outputs.name }}"
+          az webapp deploy \
+            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
+            --name "${{ steps.find-app.outputs.name }}" \
+            --src-path "$JAR_PATH" \
+            --type jar
+
+      - name: "Job summary"
+        if: always()
+        run: |
+          echo "## Backend deploy — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **App Service** : ${{ steps.find-app.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Actor** : @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
