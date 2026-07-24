@@ -11,6 +11,11 @@ spring:
 app:
   cors:
     allowed-origins: http://localhost:4200
+  security:
+    # Empty by default (local dev): the filter lets every request through.
+    # In prod, Azure App Service injects BACKEND_API_KEY (from Key Vault via
+    # Terraform, see app-service-java.tf) and the filter starts enforcing it.
+    api-key: ${BACKEND_API_KEY:}
 
 logging:
   level:
