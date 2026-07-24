@@ -20,20 +20,6 @@ spring:
       password: ${REDIS_PASSWORD:}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
-  cloud:
-    azure:
-      credential:
-        # Used only in prod (account-name set, no connection-string): this Web
-        # App's SystemAssigned identity, already granted Storage Blob Data
-        # Contributor scoped to STORAGE_CONTAINER_NAME (see storage-java.tf in
-        # the infra repo). Ignored locally, where connection-string (below,
-        # "default" profile) bypasses credential resolution entirely.
-        managed-identity-enabled: true
-      storage:
-        blob:
-          account-name: ${STORAGE_ACCOUNT_NAME:}
-          connection-string: ${STORAGE_CONNECTION_STRING:}
-
 app:
   cors:
     allowed-origins: http://localhost:4200
@@ -68,3 +54,29 @@ spring:
           # Well-known, publicly documented Azurite (Microsoft's local Azure Storage emulator,
           # docker-compose.yml) test credentials -- not a real secret, safe to commit.
           connection-string: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+
+---
+# Only active in prod (SPRING_PROFILES_ACTIVE=prod, app-service-java.tf). Both settings below are
+# scoped here rather than declared unconditionally at the top with an empty local default -- an
+# *empty* account-name property is still a *present* property, and Spring Cloud Azure's storage
+# autoconfiguration picks account-name-based endpoint construction over connection-string as soon
+# as account-name exists at all, even blank (produces an endpoint literally missing its account
+# name: "https://.blob.core.windows.net", a real error hit while wiring this up). Same reasoning
+# already applied to managed-identity-enabled: setting it locally made Spring Cloud Azure try to
+# resolve credentials via Azure's Instance Metadata Service (169.254.169.254, only reachable from
+# inside Azure), adding ~10s of connection-timeout retries to every local startup even though
+# STORAGE_CONNECTION_STRING (Azurite) was already set. Keeping both entirely absent locally (not
+# just empty) sidesteps both issues.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  cloud:
+    azure:
+      credential:
+        # This Web App's SystemAssigned identity, already granted Storage Blob Data Contributor
+        # scoped to STORAGE_CONTAINER_NAME (see storage-java.tf in the infra repo).
+        managed-identity-enabled: true
+      storage:
+        blob:
+          account-name: ${STORAGE_ACCOUNT_NAME}
