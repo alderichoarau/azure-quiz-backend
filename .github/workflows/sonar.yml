@@ -32,7 +32,7 @@ jobs:
     steps:
       # Documentation: https://github.com/actions/checkout
       - name: "Checkout repository"
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -46,7 +46,7 @@ jobs:
           cache: maven
 
       - name: Cache Sonar packages
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
