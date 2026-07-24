@@ -91,6 +91,18 @@
 		</dependency>
 
 		<!-- =====================  Azure cloud dependencies  ===================== -->
+		<!-- Autoconfigures a BlobServiceClient bean from spring.cloud.azure.storage.blob.*
+		     (application.yml): account-name + this Web App's managed identity in prod,
+		     a plain connection-string against local Azurite (docker-compose.yml) in dev.
+		     Version pinned explicitly to match spring-cloud-azure-dependencies below rather
+		     than relying on it: that BOM is imported as a plain dependency here, not inside
+		     dependencyManagement, where scope=import normally has no effect. Left as-is
+		     (pre-existing, unrelated to this change) rather than restructured. -->
+		<dependency>
+			<groupId>com.azure.spring</groupId>
+			<artifactId>spring-cloud-azure-starter-storage-blob</artifactId>
+			<version>${spring-cloud-azure-dependencies.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>com.azure.spring</groupId>
 			<artifactId>spring-cloud-azure-dependencies</artifactId>

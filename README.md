@@ -17,6 +17,7 @@ like AZ-104 can be added later with no schema change — see "Data model" below)
 - Java 21, Spring Boot 3.5.x, Maven
 - Spring Web, Spring Data JPA, PostgreSQL, Flyway, Bean Validation, Lombok, Actuator
 - Spring Data Redis (cache — see "Running locally" below)
+- Spring Cloud Azure Storage Blob (quiz result export — see "Running locally" below)
 - springdoc-openapi (Swagger UI)
 - Tests: JUnit 5, Mockito, AssertJ
 
@@ -30,16 +31,16 @@ Prerequisites: JDK 21, Docker (Desktop or Engine) running.
 
 That's it — a plain `./mvnw spring-boot:run`, or hitting "Run" on `AzureQuizBackendApplication` in
 your IDE, is enough on its own. The `spring-boot-docker-compose` dependency (pom.xml) detects
-`docker-compose.yml` at the project root and automatically starts Postgres + Redis for you before
-the app context loads, then stops them when the app stops — no manual `docker compose up -d` step.
-It's marked `optional`, so it never ships in the production jar deployed to Azure App Service; this
-convenience is dev-only.
+`docker-compose.yml` at the project root and automatically starts Postgres + Redis + Azurite (a
+local Azure Blob Storage emulator) for you before the app context loads, then stops them when the
+app stops — no manual `docker compose up -d` step. It's marked `optional`, so it never ships in the
+production jar deployed to Azure App Service; this convenience is dev-only.
 
 If you'd rather manage the containers yourself (e.g. keep them running across multiple app restarts
 instead of stopping them every time), that still works exactly as before:
 
 ```bash
-docker compose up -d      # starts Postgres + Redis (see docker-compose.yml)
+docker compose up -d      # starts Postgres + Redis + Azurite (see docker-compose.yml)
 ./mvnw spring-boot:run
 ```
 
@@ -67,6 +68,14 @@ random exam mode (`EXAM`) only draws from modules of type `CONTENT` (see
 default). Entries expire after 30 minutes; there's no explicit eviction on writes, since the underlying
 data (certifications/modules) only ever changes via a new Flyway migration, not through the running app.
 
+Every call to `GET /api/quiz-sessions/{sessionId}/result` also exports that result as a JSON blob
+(`QuizResultExportService`), downloadable again through `GET /api/quiz-sessions/{sessionId}/result/export`
+— the simplest concrete use of the Storage Account provisioned for this TP. Locally this goes to Azurite;
+in prod, to the `java-uploads-<owner>` container (Terraform's `storage-java.tf`), authenticated via this
+Web App's managed identity, no account key involved either way (`shared_access_key_enabled = false` on
+the account). A Storage outage never breaks the quiz itself — the export failing is only logged, not
+thrown; Postgres stays the source of truth for results.
+
 Swagger UI: http://localhost:8080/swagger-ui.html
 
 ## Tests
@@ -92,6 +101,9 @@ properties, no extra profile needs activating:
 | `REDIS_PASSWORD` | Redis access key. Empty locally (docker-compose's Redis has no auth) |
 | `REDIS_SSL_ENABLED` | `true` in prod (Azure Managed Redis requires TLS), `false` locally |
 | `BACKEND_API_KEY` | Shared secret the frontend must send as `X-Api-Key` (see `ApiKeyFilter`). Left unset locally — the check is skipped. In prod it's injected from Key Vault (see `app-service-java.tf` / `keyvault.tf` in the infra repo). |
+| `STORAGE_ACCOUNT_NAME` | Storage Account name. Authenticated via this Web App's managed identity (no key) — see `SPRING_PROFILES_ACTIVE` below for why |
+| `STORAGE_CONTAINER_NAME` | Blob container for quiz result exports, e.g. `java-uploads-<owner>` |
+| `SPRING_PROFILES_ACTIVE` | Set to `prod` by Terraform. Deactivates the `default` profile's local-only settings (localhost datasource, Azurite connection string) — without it, Blob Storage would try to reach a local Azurite that doesn't exist in Azure |
 
 ## Data model
 
@@ -111,7 +123,8 @@ associated modules/questions (a dedicated Flyway migration, generated from the s
   - `EXAM` mode: `{ "mode": "EXAM", "certificationId": "...", "questionCount": 40 }` (`questionCount` optional, default 40)
   - the response contains the questions and their options **without** indicating the correct answer
 - `POST /api/quiz-sessions/{sessionId}/questions/{questionId}/answer` — submits an answer, returns whether it's correct + the correct options + the explanation
-- `GET /api/quiz-sessions/{sessionId}/result` — final aggregated score for the session
+- `GET /api/quiz-sessions/{sessionId}/result` — final aggregated score for the session; also exports it as a JSON blob (see "Running locally")
+- `GET /api/quiz-sessions/{sessionId}/result/export` — downloads that exported blob (404 if `result` was never called for this session)
 
 ## Deploying
 

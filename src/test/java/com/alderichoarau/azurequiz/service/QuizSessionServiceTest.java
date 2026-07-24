@@ -42,6 +42,7 @@ class QuizSessionServiceTest {
     @Mock private QuizSessionRepository quizSessionRepository;
     @Mock private QuizSessionQuestionRepository quizSessionQuestionRepository;
     @Mock private QuizAnswerRepository quizAnswerRepository;
+    @Mock private QuizResultExportService quizResultExportService;
 
     private QuizSessionService service;
 
@@ -55,7 +56,8 @@ class QuizSessionServiceTest {
                         answerOptionRepository,
                         quizSessionRepository,
                         quizSessionQuestionRepository,
-                        quizAnswerRepository);
+                        quizAnswerRepository,
+                        quizResultExportService);
     }
 
     @Test

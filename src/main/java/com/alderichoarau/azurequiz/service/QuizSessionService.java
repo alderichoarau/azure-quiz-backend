@@ -55,6 +55,7 @@ public class QuizSessionService {
     private final QuizSessionRepository quizSessionRepository;
     private final QuizSessionQuestionRepository quizSessionQuestionRepository;
     private final QuizAnswerRepository quizAnswerRepository;
+    private final QuizResultExportService quizResultExportService;
 
     public QuizSessionDto createSession(CreateQuizSessionRequest request) {
         log.info(
@@ -226,7 +227,10 @@ public class QuizSessionService {
                 answeredCount,
                 String.format("%.1f", scorePercentage));
 
-        return new QuizResultDto(sessionId, total, answeredCount, correctCount, scorePercentage, details);
+        QuizResultDto result =
+                new QuizResultDto(sessionId, total, answeredCount, correctCount, scorePercentage, details);
+        quizResultExportService.export(result);
+        return result;
     }
 
     private QuestionResultDto toQuestionResultDto(

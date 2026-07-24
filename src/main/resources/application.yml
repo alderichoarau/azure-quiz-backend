@@ -20,6 +20,19 @@ spring:
       password: ${REDIS_PASSWORD:}
       ssl:
         enabled: ${REDIS_SSL_ENABLED:false}
+  cloud:
+    azure:
+      credential:
+        # Used only in prod (account-name set, no connection-string): this Web
+        # App's SystemAssigned identity, already granted Storage Blob Data
+        # Contributor scoped to STORAGE_CONTAINER_NAME (see storage-java.tf in
+        # the infra repo). Ignored locally, where connection-string (below,
+        # "default" profile) bypasses credential resolution entirely.
+        managed-identity-enabled: true
+      storage:
+        blob:
+          account-name: ${STORAGE_ACCOUNT_NAME:}
+          connection-string: ${STORAGE_CONNECTION_STRING:}
 
 app:
   cors:
@@ -29,12 +42,17 @@ app:
     # In prod, Azure App Service injects BACKEND_API_KEY (from Key Vault via
     # Terraform, see app-service-java.tf) and the filter starts enforcing it.
     api-key: ${BACKEND_API_KEY:}
+  storage:
+    container-name: ${STORAGE_CONTAINER_NAME:quiz-results-local}
 
 logging:
   level:
     com.alderichoarau.azurequiz: DEBUG
 
 ---
+# Spring's implicit "default" profile: active whenever no other profile is set. Locally that's
+# always the case; in prod, SPRING_PROFILES_ACTIVE=prod (app-service-java.tf) keeps this document
+# from loading there, so the two Azurite/localhost-only settings below never leak into prod.
 spring:
   config:
     activate:
@@ -43,3 +61,10 @@ spring:
     url: jdbc:postgresql://localhost:5432/quizz
     username: quizz
     password: quizz
+  cloud:
+    azure:
+      storage:
+        blob:
+          # Well-known, publicly documented Azurite (Microsoft's local Azure Storage emulator,
+          # docker-compose.yml) test credentials -- not a real secret, safe to commit.
+          connection-string: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
