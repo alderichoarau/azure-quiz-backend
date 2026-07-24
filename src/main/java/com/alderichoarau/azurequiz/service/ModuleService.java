@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,10 @@ public class ModuleService {
     private final QuizModuleRepository moduleRepository;
     private final QuestionRepository questionRepository;
 
+    // Same Redis cache as CertificationService — modules/question counts per certification
+    // change rarely but this is called on every certification page visit. Keyed per
+    // certificationId so each certification's module list caches independently.
+    @Cacheable(value = "modules", key = "#certificationId")
     public List<ModuleSummaryDto> getModulesByCertification(UUID certificationId) {
         log.debug("Fetching modules for certification {}", certificationId);
         if (!certificationRepository.existsById(certificationId)) {

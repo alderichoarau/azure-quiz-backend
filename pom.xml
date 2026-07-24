@@ -43,6 +43,20 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<!-- Auto-starts/stops docker-compose.yml (Postgres + Redis) whenever the app runs
+		     locally: IDE "Run", `./mvnw spring-boot:run`, tests. A plain "classic" run no
+		     longer requires a manual `docker compose up -d` first. `optional` so Spring
+		     Boot's repackage plugin excludes it from the production jar: this must never be
+		     active on Azure App Service, only for local dev. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-docker-compose</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
@@ -110,5 +124,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

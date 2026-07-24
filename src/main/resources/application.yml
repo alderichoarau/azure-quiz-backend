@@ -7,6 +7,19 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  cache:
+    type: redis
+  data:
+    redis:
+      # Locally: docker-compose's "redis" service, plaintext, no password.
+      # In prod: REDIS_HOSTNAME/PORT/PASSWORD/SSL_ENABLED come from Terraform
+      # (Azure Managed Redis, see app-service-java.tf / redis.tf) — TLS and a
+      # key are mandatory there, both off by default here for local dev.
+      host: ${REDIS_HOSTNAME:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
 
 app:
   cors:

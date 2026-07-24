@@ -16,17 +16,31 @@ like AZ-104 can be added later with no schema change — see "Data model" below)
 
 - Java 21, Spring Boot 3.5.x, Maven
 - Spring Web, Spring Data JPA, PostgreSQL, Flyway, Bean Validation, Lombok, Actuator
+- Spring Data Redis (cache — see "Running locally" below)
 - springdoc-openapi (Swagger UI)
 - Tests: JUnit 5, Mockito, AssertJ
 
 ## Running locally
 
-Prerequisites: JDK 21, a local PostgreSQL instance (database `quizz`, user/password `quizz` — see the
-`default` profile in `application.yml`, adjust if needed).
+Prerequisites: JDK 21, Docker (Desktop or Engine) running.
 
 ```bash
-docker compose up -d      # starts a local Postgres matching the default profile (see docker-compose.yml)
 ./mvnw spring-boot:run    # starts the API on http://localhost:8080
+```
+
+That's it — a plain `./mvnw spring-boot:run`, or hitting "Run" on `AzureQuizBackendApplication` in
+your IDE, is enough on its own. The `spring-boot-docker-compose` dependency (pom.xml) detects
+`docker-compose.yml` at the project root and automatically starts Postgres + Redis for you before
+the app context loads, then stops them when the app stops — no manual `docker compose up -d` step.
+It's marked `optional`, so it never ships in the production jar deployed to Azure App Service; this
+convenience is dev-only.
+
+If you'd rather manage the containers yourself (e.g. keep them running across multiple app restarts
+instead of stopping them every time), that still works exactly as before:
+
+```bash
+docker compose up -d      # starts Postgres + Redis (see docker-compose.yml)
+./mvnw spring-boot:run
 ```
 
 No other setup is required: `app.security.api-key` (see "Environment variables" below) defaults to empty,
@@ -46,6 +60,12 @@ included in the same source document) are imported as modules of type `MOCK_EXAM
 `module`, migration `V8`). They stay strictly independent from each other and from course modules: the
 random exam mode (`EXAM`) only draws from modules of type `CONTENT` (see
 `QuestionRepository.findRandomActiveByCertification`).
+
+`docker-compose up -d` also starts a local Redis (no auth, plaintext) backing
+`CertificationService.getAllCertifications()` and `ModuleService.getModulesByCertification()`, both
+`@Cacheable` (see `CacheConfig` for why values are JSON-serialized rather than the JDK-serialization
+default). Entries expire after 30 minutes; there's no explicit eviction on writes, since the underlying
+data (certifications/modules) only ever changes via a new Flyway migration, not through the running app.
 
 Swagger UI: http://localhost:8080/swagger-ui.html
 
@@ -67,6 +87,10 @@ properties, no extra profile needs activating:
 | `SPRING_DATASOURCE_USERNAME` | PostgreSQL user |
 | `SPRING_DATASOURCE_PASSWORD` | PostgreSQL password |
 | `APP_CORS_ALLOWED_ORIGINS` | Allowed origin(s), e.g. the frontend Static Web App URL |
+| `REDIS_HOSTNAME` | Redis host, e.g. Azure Managed Redis's hostname |
+| `REDIS_PORT` | Redis port. Defaults to `6379` (docker-compose) locally; Azure Managed Redis exposes a different port, see the infra repo's `redis.tf` |
+| `REDIS_PASSWORD` | Redis access key. Empty locally (docker-compose's Redis has no auth) |
+| `REDIS_SSL_ENABLED` | `true` in prod (Azure Managed Redis requires TLS), `false` locally |
 | `BACKEND_API_KEY` | Shared secret the frontend must send as `X-Api-Key` (see `ApiKeyFilter`). Left unset locally — the check is skipped. In prod it's injected from Key Vault (see `app-service-java.tf` / `keyvault.tf` in the infra repo). |
 
 ## Data model
@@ -89,10 +113,17 @@ associated modules/questions (a dedicated Flyway migration, generated from the s
 - `POST /api/quiz-sessions/{sessionId}/questions/{questionId}/answer` — submits an answer, returns whether it's correct + the correct options + the explanation
 - `GET /api/quiz-sessions/{sessionId}/result` — final aggregated score for the session
 
+## Deploying
+
+`.github/workflows/deploy.yml` (`workflow_dispatch`, choice of `nonprod`/`prod`) builds the jar and deploys it
+to the Java App Service provisioned by the [azure-infra-terraform](https://github.com/alderichoarau/azure-infra-terraform)
+repo. Nothing is hardcoded: the target App Service is looked up by tag (`owner` + `environment` +
+`component=quiz-backend`) at deploy time via Azure OIDC login, since its name embeds the learner's owner id.
+
 ## Out of scope for this repo
 
-- Provisioning Azure infrastructure (App Service, Static Web App, PostgreSQL Flexible Server).
-- CI/CD deployment workflow to Azure.
+- Provisioning Azure infrastructure (App Service, Static Web App, PostgreSQL Flexible Server) — see
+  [azure-infra-terraform](https://github.com/alderichoarau/azure-infra-terraform).
 - Importing the real question content (supplied separately, converted into Flyway migrations).
 
 ## Contributing
