@@ -59,9 +59,7 @@ jobs:
         run: |
           NAME=$(az resource list \
             --resource-group "${{ secrets.AZURE_RG_NAME }}" \
-            --resource-type "Microsoft.Web/sites" \
-            --tag "component=quiz-backend" \
-            --query "[?tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --query "[?type=='Microsoft.Web/sites' && tags.component=='quiz-backend' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
             -o tsv)
 
           if [ -z "$NAME" ]; then
