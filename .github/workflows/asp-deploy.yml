@@ -7,7 +7,7 @@
 # the same Resource Group also holds the Python TP's App Service, which would otherwise match on
 # owner/environment alone.
 # -----------------------------------------------------------------------------------------------
-name: Deploy backend
+name: AZ ASP - Deploy backend application
 run-name: "Deploy backend · ${{ inputs.environment }} · @${{ github.actor }}"
 
 on:
