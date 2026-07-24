@@ -89,10 +89,17 @@
 	<build>
 		<resources>
 			<resource>
+				<!-- "*" (Ant pattern) only matches files directly in this directory, not
+				     subdirectories - it was silently excluding db/migration/*.sql (Flyway
+				     migrations), static/, and templates/ from the built jar. Flyway then
+				     found zero migrations to run, so no tables ever got created, and
+				     Hibernate's schema validation failed with "missing table [...]" at
+				     startup. "**" matches recursively, same as Maven's implicit default
+				     when no <includes> is set at all. -->
 				<filtering>true</filtering>
 				<directory>${basedir}/src/main/resources</directory>
 				<includes>
-					<include>*</include>
+					<include>**</include>
 				</includes>
 			</resource>
 		</resources>

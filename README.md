@@ -25,8 +25,13 @@ Prerequisites: JDK 21, a local PostgreSQL instance (database `quizz`, user/passw
 `default` profile in `application.yml`, adjust if needed).
 
 ```bash
+docker compose up -d      # starts a local Postgres matching the default profile (see docker-compose.yml)
 ./mvnw spring-boot:run    # starts the API on http://localhost:8080
 ```
+
+No other setup is required: `app.security.api-key` (see "Environment variables" below) defaults to empty,
+so the `X-Api-Key` check is disabled locally, and CORS already allows `http://localhost:4200` (the Angular
+dev server's default port).
 
 Flyway applies the migrations (`src/main/resources/db/migration`) on startup, including the real content for
 AZ-900 modules 1 to 6 (`V2` to `V7`, 45 questions per module: 30 standard questions + 15 scenario questions).
@@ -62,6 +67,7 @@ properties, no extra profile needs activating:
 | `SPRING_DATASOURCE_USERNAME` | PostgreSQL user |
 | `SPRING_DATASOURCE_PASSWORD` | PostgreSQL password |
 | `APP_CORS_ALLOWED_ORIGINS` | Allowed origin(s), e.g. the frontend Static Web App URL |
+| `BACKEND_API_KEY` | Shared secret the frontend must send as `X-Api-Key` (see `ApiKeyFilter`). Left unset locally — the check is skipped. In prod it's injected from Key Vault (see `app-service-java.tf` / `keyvault.tf` in the infra repo). |
 
 ## Data model
 
