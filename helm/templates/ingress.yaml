@@ -1,0 +1,24 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "quiz-backend.fullname" . }}
+  labels:
+    {{- include "quiz-backend.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "quiz-backend.fullname" . }}
+                port:
+                  # The Service's own port (service.yaml hardcodes 80), not
+                  # .Values.service.port -- that one's the container's port
+                  # (8080), used as the Service's targetPort instead.
+                  number: 80
+{{- end }}

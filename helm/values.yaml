@@ -1,0 +1,50 @@
+# Defaults here are deliberately incomplete -- image.repository, image.tag,
+# and ingress.host are always passed via `--set` from deploy-aks.yml (CI
+# knows the ACR login server, git sha, and nip.io hostname; hardcoding any of
+# them here would go stale immediately). Everything else is a sane default a
+# learner can override the same way if needed.
+
+replicaCount: 1
+
+image:
+  repository: "" # <acr-login-server>/quiz-backend, set by CI
+  tag: "" # git sha, set by CI
+  pullPolicy: IfNotPresent
+
+service:
+  port: 8080
+
+ingress:
+  enabled: true
+  # AKS's App Routing add-on's IngressClass (terraform-shared-aks/main.tf,
+  # web_app_routing block) -- not nginx-ingress installed by hand.
+  className: webapprouting.kubernetes.azure.com
+  host: "" # <owner>-backend.<ingress-ip>.nip.io, set by CI
+
+# Name of the Secret deploy-aks.yml creates via `kubectl create secret` before
+# `helm upgrade` runs (Postgres URL/user/password, Redis host/port/password,
+# the shared API key, storage account name) -- not templated by this chart on
+# purpose, see ../../.github/workflows/deploy-aks.yml's "Read Key Vault
+# secrets" step and terraform/aks.tf's header comment for why.
+secretName: quiz-backend-secrets
+
+env:
+  SPRING_PROFILES_ACTIVE: prod
+  # Rest (SPRING_DATASOURCE_URL, REDIS_HOSTNAME, STORAGE_ACCOUNT_NAME, ...)
+  # come from --set-string env.KEY=value in deploy-aks.yml, populated from
+  # `terraform output` -- same non-secret values app-service-java.tf wires
+  # into App Service's app_settings for the managed-services track.
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 768Mi
+
+# spring-boot-starter-actuator's /actuator/health (application.yml,
+# CacheConfig.java's sibling work earlier in this TP) -- same endpoint
+# App Service's health_check_path pings for the managed-services track.
+probes:
+  path: /actuator/health
+  port: 8080

@@ -1,0 +1,213 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploys the backend to the mutualised AKS cluster (piste "AKS"). Separate
+# from deploy.yml (App Service track) -- run one or the other depending on
+# which track this learner picked, not both against the same secrets.
+#
+# KNOWN GAP: Postgres is still Private-Endpoint/VNet-only in
+# azure-infra-terraform (database.tf) -- the shared AKS cluster lives outside
+# that VNet with no peering, so SPRING_DATASOURCE_URL below will not actually
+# be reachable from a pod until that's resolved (either a firewall-rule-based
+# public networking mode for Postgres, or VNet peering -- see database.tf's
+# comment). The backend WILL crash-loop on startup until this is fixed. Redis
+# and Storage are both already reachable (redis.tf's public_network_access =
+# "Enabled", storage was already public) -- only Postgres blocks a fully
+# working deploy today.
+# ─────────────────────────────────────────────────────────────────────────────
+name: AKS - Deploy backend application
+run-name: "Deploy backend (AKS) · ${{ inputs.environment }} · @${{ github.actor }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (matches the `environment` tag set by Terraform)"
+        required: true
+        type: choice
+        options:
+          - nonprod
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  # Fixed defaults shared by every learner on this cohort -- same values
+  # azure-infra-terraform's variables.tf defaults to (location) and
+  # terraform-shared-aks/variables.tf's cohort/shared_rg_name default to.
+  # Not secrets: not sensitive, don't vary per learner.
+  AZURE_LOCATION: francecentral
+  SHARED_RG: rg-shared-prf2026
+  COHORT: prf2026
+  AKS_CLUSTER: aks-${{ inputs.environment }}-prf2026
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Azure Login (OIDC)"
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: "Find ACR by tag"
+        id: find-acr
+        run: |
+          NAME=$(az resource list \
+            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
+            --query "[?type=='Microsoft.ContainerRegistry/registries' && tags.component=='quiz-registry' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            -o tsv)
+          if [ -z "$NAME" ]; then
+            echo "::error::No ACR found (owner=${{ secrets.AZURE_OWNER }}, environment=${{ inputs.environment }})."
+            exit 1
+          fi
+          LOGIN_SERVER=$(az acr show --name "$NAME" --query loginServer -o tsv)
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "login_server=$LOGIN_SERVER" >> "$GITHUB_OUTPUT"
+
+      - name: "Find Key Vault by tag"
+        id: find-kv
+        run: |
+          NAME=$(az resource list \
+            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
+            --query "[?type=='Microsoft.KeyVault/vaults' && tags.component=='quiz-backend' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            -o tsv)
+          if [ -z "$NAME" ]; then
+            echo "::error::No Key Vault found."
+            exit 1
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: "Find Storage Account by tag"
+        id: find-storage
+        run: |
+          NAME=$(az resource list \
+            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
+            --query "[?type=='Microsoft.Storage/storageAccounts' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            -o tsv)
+          if [ -z "$NAME" ]; then
+            echo "::error::No Storage Account found."
+            exit 1
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: "Read Key Vault secrets"
+        id: kv
+        run: |
+          for key in postgres-host postgres-username postgres-password redis-access-key backend-api-key; do
+            VALUE=$(az keyvault secret show --vault-name "${{ steps.find-kv.outputs.name }}" --name "$key" --query value -o tsv)
+            echo "::add-mask::$VALUE"
+            OUT_KEY=$(echo "$key" | tr '-' '_')
+            echo "${OUT_KEY}=$VALUE" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: "Generate Storage SAS token"
+        id: sas
+        run: |
+          # User Delegation SAS (--auth-mode login): signed with this identity's
+          # own Azure AD credentials, not the account key -- works even though
+          # shared_access_key_enabled = false on this Storage Account
+          # (module.storage_shared). ci_app_deploy already holds Storage Blob
+          # Data Contributor on the java-uploads container specifically
+          # (storage-java.tf) — needed to both generate and use this token.
+          EXPIRY=$(date -u -d "+7 days" '+%Y-%m-%dT%H:%MZ')
+          TOKEN=$(az storage container generate-sas \
+            --account-name "${{ steps.find-storage.outputs.name }}" \
+            --name "java-uploads-${{ secrets.AZURE_OWNER }}" \
+            --permissions racwdl \
+            --expiry "$EXPIRY" \
+            --auth-mode login \
+            --as-user \
+            -o tsv)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: "ACR login"
+        run: az acr login --name ${{ steps.find-acr.outputs.name }}
+
+      - name: "Build & push image"
+        run: |
+          docker build \
+            -t ${{ steps.find-acr.outputs.login_server }}/quiz-backend:${{ github.sha }} \
+            .
+          docker push ${{ steps.find-acr.outputs.login_server }}/quiz-backend:${{ github.sha }}
+
+      - name: "Install kubectl + kubelogin"
+        run: az aks install-cli
+
+      - name: "Get AKS credentials"
+        run: |
+          az aks get-credentials \
+            --resource-group "$SHARED_RG" \
+            --name "$AKS_CLUSTER" \
+            --overwrite-existing
+          # Converts the kubeconfig to use this same OIDC-authenticated az CLI
+          # session for every kubectl call, authorized via the namespace-scoped
+          # Azure RBAC role bootstrap-aks-namespace.sh (azure-infra-terraform)
+          # already granted ci_app_deploy — never the cluster's local-admin
+          # credentials.
+          kubelogin convert-kubeconfig -l azurecli
+
+      - name: "Verify namespace exists"
+        run: |
+          if ! kubectl get namespace "${{ secrets.AZURE_OWNER }}" >/dev/null 2>&1; then
+            echo "::error::Namespace '${{ secrets.AZURE_OWNER }}' doesn't exist yet on $AKS_CLUSTER. Ask the trainer to run scripts/bootstrap-aks-namespace.sh (azure-infra-terraform) first."
+            exit 1
+          fi
+
+      - name: "Create/update Kubernetes Secret"
+        run: |
+          kubectl create secret generic quiz-backend-secrets \
+            -n "${{ secrets.AZURE_OWNER }}" \
+            --from-literal=SPRING_DATASOURCE_URL="jdbc:postgresql://${{ steps.kv.outputs.postgres_host }}:5432/appdb?sslmode=require" \
+            --from-literal=SPRING_DATASOURCE_USERNAME="${{ steps.kv.outputs.postgres_username }}" \
+            --from-literal=SPRING_DATASOURCE_PASSWORD="${{ steps.kv.outputs.postgres_password }}" \
+            --from-literal=REDIS_PASSWORD="${{ steps.kv.outputs.redis_access_key }}" \
+            --from-literal=BACKEND_API_KEY="${{ steps.kv.outputs.backend_api_key }}" \
+            --from-literal=STORAGE_SAS_TOKEN="${{ steps.sas.outputs.token }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: "Resolve ingress public IP"
+        id: ingress-ip
+        run: |
+          IP=""
+          for i in $(seq 1 30); do
+            IP=$(kubectl get svc -n app-routing-system -l app.kubernetes.io/name=nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+            [ -n "$IP" ] && break
+            sleep 10
+          done
+          if [ -z "$IP" ]; then
+            echo "::error::Could not resolve the App Routing add-on's ingress IP after 5 minutes."
+            exit 1
+          fi
+          echo "ip=$IP" >> "$GITHUB_OUTPUT"
+
+      - name: "Helm upgrade"
+        run: |
+          helm upgrade --install quiz-backend ./helm \
+            --namespace "${{ secrets.AZURE_OWNER }}" \
+            --set image.repository="${{ steps.find-acr.outputs.login_server }}/quiz-backend" \
+            --set image.tag="${{ github.sha }}" \
+            --set ingress.host="${{ secrets.AZURE_OWNER }}-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" \
+            --set-string env.SPRING_PROFILES_ACTIVE=aks \
+            --set-string env.REDIS_HOSTNAME="redis-${{ secrets.AZURE_OWNER }}-tf.${{ env.AZURE_LOCATION }}.redis.azure.net" \
+            --set-string env.REDIS_PORT="10000" \
+            --set-string env.REDIS_SSL_ENABLED="true" \
+            --set-string env.STORAGE_ACCOUNT_NAME="${{ steps.find-storage.outputs.name }}" \
+            --set-string env.STORAGE_CONTAINER_NAME="java-uploads-${{ secrets.AZURE_OWNER }}" \
+            --set-string env.APP_CORS_ALLOWED_ORIGINS="https://${{ secrets.AZURE_OWNER }}-frontend.${{ steps.ingress-ip.outputs.ip }}.nip.io" \
+            --wait --timeout 5m
+
+      - name: "Job summary"
+        if: always()
+        run: |
+          echo "## Backend deploy (AKS) — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Namespace** : ${{ secrets.AZURE_OWNER }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image** : ${{ steps.find-acr.outputs.login_server }}/quiz-backend:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **URL** : https://${{ secrets.AZURE_OWNER }}-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Actor** : @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"

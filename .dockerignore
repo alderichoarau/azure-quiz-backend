@@ -1,0 +1,11 @@
+target/
+.git/
+.github/
+.idea/
+.vscode/
+*.iml
+docker-compose.yml
+helm/
+README.md
+CONTRIBUTING.md
+LICENSE
