@@ -13,7 +13,7 @@
 # "Enabled", storage was already public) -- only Postgres blocks a fully
 # working deploy today.
 # ─────────────────────────────────────────────────────────────────────────────
-name: AKS - Deploy backend application
+name: AZ AKS - Deploy backend application
 run-name: "Deploy backend (AKS) · ${{ inputs.environment }} · @${{ github.actor }}"
 
 on:
@@ -155,10 +155,17 @@ jobs:
 
       - name: "Verify namespace exists"
         run: |
-          if ! kubectl get namespace "${{ secrets.AZURE_OWNER }}" >/dev/null 2>&1; then
-            echo "::error::Namespace '${{ secrets.AZURE_OWNER }}' doesn't exist yet on $AKS_CLUSTER. Ask the trainer to run scripts/bootstrap-aks-namespace.sh (azure-infra-terraform) first."
+          OUTPUT=$(kubectl get namespace "${{ secrets.AZURE_OWNER }}" 2>&1) || {
+            # A cluster that's stopped/still starting (az aks start, e.g.
+            # after cost-saving auto-stop) fails this exact same way as a
+            # genuinely missing namespace -- kubectl can't tell "not found"
+            # apart from "couldn't even connect" without inspecting the
+            # actual error text. Surfacing it avoids chasing the wrong fix
+            # (re-running bootstrap-aks-namespace.sh) when the real problem
+            # is just "cluster isn't up yet, wait and retry".
+            echo "::error::Could not confirm namespace '${{ secrets.AZURE_OWNER }}' exists on $AKS_CLUSTER. If the error below mentions a connection timeout, the cluster is probably stopped/still starting (az aks start, wait a few minutes, retry). If it's a clean \"not found\", ask the trainer to run scripts/bootstrap-aks-namespace.sh (azure-infra-terraform). Raw output: $OUTPUT"
             exit 1
-          fi
+          }
 
       - name: "Create/update Kubernetes Secret"
         run: |
@@ -177,12 +184,17 @@ jobs:
         run: |
           IP=""
           for i in $(seq 1 30); do
-            IP=$(kubectl get svc -n app-routing-system -l app.kubernetes.io/name=nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+            OUTPUT=$(kubectl get svc -n app-routing-system -l app.kubernetes.io/name=nginx -o jsonpath='{.items[0].status.loadBalancer.ingress[0].ip}' 2>&1)
+            IP=$(echo "$OUTPUT" | grep -Eo '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' || true)
             [ -n "$IP" ] && break
             sleep 10
           done
           if [ -z "$IP" ]; then
-            echo "::error::Could not resolve the App Routing add-on's ingress IP after 5 minutes."
+            # Surfaces the real reason instead of a generic timeout message --
+            # e.g. a 403 here almost always means the RBAC Reader role on
+            # app-routing-system (bootstrap-aks-namespace.sh/.yml) is
+            # missing, not that the ingress controller just isn't ready yet.
+            echo "::error::Could not resolve the App Routing add-on's ingress IP after 5 minutes. Last kubectl output: $OUTPUT"
             exit 1
           fi
           echo "ip=$IP" >> "$GITHUB_OUTPUT"

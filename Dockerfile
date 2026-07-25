@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ──────────────────────────────────────────────────────────────────────────────
 # Multi-stage build for the AKS track (piste "AKS", see helm/ and
-# .github/workflows/deploy-aks.yml). The App Service track (deploy.yml) never
+# .github/workflows/aks-deploy.yml). The App Service track (deploy.yml) never
 # uses this image — App Service builds/deploys the jar directly.
 # ──────────────────────────────────────────────────────────────────────────────
 

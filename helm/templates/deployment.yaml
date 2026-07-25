@@ -31,7 +31,7 @@ spec:
               value: {{ $value | quote }}
             {{- end }}
           # Secret config (DB password, Redis password, API key, ...) — the
-          # Secret named here is created by deploy-aks.yml BEFORE this chart
+          # Secret named here is created by aks-deploy.yml BEFORE this chart
           # is installed/upgraded, not by this chart (see values.yaml comment
           # on secretName).
           envFrom:
