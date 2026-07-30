@@ -32,8 +32,15 @@ WORKDIR /app
 # Runs as non-root -- AKS's default Pod Security Standards (baseline/restricted,
 # commonly enforced via namespace labels) reject containers that try to run as
 # UID 0.
-RUN useradd --system --create-home --shell /usr/sbin/nologin spring
-USER spring
+#
+# --uid pinned explicitly: the Helm chart's securityContext (deployment.yaml)
+# sets runAsNonRoot: true with an explicit numeric runAsUser matching this --
+# without a numeric UID here, `useradd --system` picks whatever's next free
+# in the system range, and Kubernetes refuses to start the container at all
+# ("container has runAsNonRoot and image has non-numeric user (spring),
+# cannot verify user is non-root" -- CreateContainerConfigError, hit live).
+RUN useradd --system --uid 1001 --create-home --shell /usr/sbin/nologin spring
+USER 1001
 
 COPY --from=build /app/target/azure-quiz-backend-*.jar app.jar
 
