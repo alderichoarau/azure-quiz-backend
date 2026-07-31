@@ -1,0 +1,78 @@
+# -----------------------------------------------------------------------------------------------
+# Same pattern as azure-quiz-frontend's release-prepare.yml/release-push.yml, adapted for Maven:
+# bump pom.xml's <version> on a release/<tag> branch, open a PR back to the triggering branch.
+# Merging it (manually -- no auto-merge here, a deliberate checkpoint before a release goes out)
+# is what actually creates the tag/release/deploy -- see release-push.yml, triggered by that merge.
+# -----------------------------------------------------------------------------------------------
+name: GitHub - Prepare Release
+run-name: Prepare release ${{ inputs.tag_name }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag name to create (e.g. v1.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  JAVA_VERSION: 21
+  JAVA_DISTRIBUTION: temurin
+
+jobs:
+  prepare:
+    name: "Bump version & open release PR"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v7
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: "Resolve Maven version from tag"
+        id: mvn-version
+        run: |
+          # Maven artifact versions don't carry the leading "v" this org's git
+          # tags use (v1.1.0) -- strip it for pom.xml, the raw tag_name (with
+          # "v") is still what becomes the git tag itself, further down.
+          echo "value=${TAG_NAME#v}" >> "$GITHUB_OUTPUT"
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+
+      - name: "Bump pom.xml version"
+        run: >
+          mvn -B org.codehaus.mojo:versions-maven-plugin:2.21.0:set
+          -DnewVersion="${{ steps.mvn-version.outputs.value }}"
+          -DgenerateBackupPoms=false
+
+      - name: "Commit and push release branch"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "release/${{ inputs.tag_name }}"
+          git add pom.xml
+          if git diff --cached --quiet; then
+            echo "pom.xml already at ${{ steps.mvn-version.outputs.value }}, nothing to bump" >&2
+            exit 1
+          fi
+          git commit -m "chore: bump version to ${{ inputs.tag_name }}"
+          git push origin "release/${{ inputs.tag_name }}"
+
+      - name: "Open pull request"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base "${{ github.ref_name }}" \
+            --head "release/${{ inputs.tag_name }}" \
+            --title "chore: release ${{ inputs.tag_name }}" \
+            --body "Bumps pom.xml's version to \`${{ steps.mvn-version.outputs.value }}\`. **Merge this PR (squash) when ready to ship** — merging creates the \`${{ inputs.tag_name }}\` tag, the matching GitHub release, and deploys it to **nonprod** (AKS + App Service), see release-push.yml."
