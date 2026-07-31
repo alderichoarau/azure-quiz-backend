@@ -20,6 +20,12 @@ ingress:
   # web_app_routing block) -- not nginx-ingress installed by hand.
   className: webapprouting.kubernetes.azure.com
   host: "" # <owner>-backend.<ingress-ip>.nip.io, set by CI
+  # Name of a ClusterIssuer created by
+  # azure-infra-terraform/scripts/setup-cert-manager.sh (trainer-run,
+  # one-shot on the shared cluster) -- "letsencrypt-prod" once that's been
+  # run, "" to fall back to the App Routing add-on's self-signed default
+  # (e.g. cert-manager not installed yet).
+  clusterIssuer: letsencrypt-prod
 
 # Name of the Secret aks-deploy.yml creates via `kubectl create secret` before
 # `helm upgrade` runs (Postgres URL/user/password, Redis host/port/password,
