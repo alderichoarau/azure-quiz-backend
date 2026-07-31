@@ -133,6 +133,10 @@ to the Java App Service provisioned by the [azure-infra-terraform](https://githu
 repo. Nothing is hardcoded: the target App Service is looked up by tag (`owner` + `environment` +
 `component=quiz-backend`) at deploy time via Azure OIDC login, since its name embeds the learner's owner id.
 
+Piste AKS: `.github/workflows/aks-deploy.yml` builds the same image, pushes it to ACR, and `helm upgrade`s it
+onto the shared AKS cluster instead. Its Ingress gets a real Let's Encrypt cert (see the infra repo's
+`scripts/setup-cert-manager.sh`) rather than a self-signed one.
+
 ## Out of scope for this repo
 
 - Provisioning Azure infrastructure (App Service, Static Web App, PostgreSQL Flexible Server) — see
