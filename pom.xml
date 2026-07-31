@@ -18,6 +18,7 @@
 	<properties>
 		<java.version>21</java.version>
 		<springdoc-openapi.version>2.8.17</springdoc-openapi.version>
+		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<!-- AZURE -->
 		<spring-cloud-azure-dependencies.version>7.3.0</spring-cloud-azure-dependencies.version>
 		<azure-functions-maven-plugin.version>1.42.0</azure-functions-maven-plugin.version>
@@ -133,6 +134,35 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- Not managed by spring-boot-starter-parent's own BOM, so pinned
+			     explicitly (same convention as springdoc-openapi.version above).
+			     Without this plugin, `mvn verify` never produces
+			     target/site/jacoco/jacoco.xml, so sonar.yml's `sonar:sonar`
+			     goal has nothing to read and SonarCloud silently shows 0%
+			     coverage instead of erroring (hit live). prepare-agent
+			     instruments classes for the `test` phase; the `report`
+			     execution below turns the resulting .exec data into the XML
+			     Sonar expects, before `verify` finishes and `sonar:sonar` runs
+			     in the same mvn invocation. -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.15</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

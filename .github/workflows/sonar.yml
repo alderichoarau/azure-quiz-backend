@@ -53,9 +53,15 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar
 
       - name: Build and analyze
+        # sonar.coverage.jacoco.xmlReportPaths set explicitly rather than
+        # relying on the Sonar Java plugin's own default guess -- the
+        # jacoco-maven-plugin (pom.xml) writes here via its `report`
+        # execution, bound to the `test` phase, which finishes before this
+        # single `mvn verify sonar:sonar` invocation reaches the sonar goal.
         run: >
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
           -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }}
           -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
           -Dsonar.host.url=${{ env.SONAR_HOST_URL }}
+          -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
