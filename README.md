@@ -3,9 +3,17 @@
 Spring Boot REST API for the Microsoft Azure certifications revision app (AZ-900 to start, other certifications
 like AZ-104 can be added later with no schema change — see "Data model" below).
 
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5-6DB33F?logo=springboot&logoColor=white)
+![Maven](https://img.shields.io/badge/Maven-C71A36?logo=apachemaven&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+
 ## Last analysis
+[![CI · Build all](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml)
 [![GitHub - Sonar Cloud Analysis](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml)
-[![GitHub - Build all](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml)
+[![Deploy · App Service](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml)
+[![Deploy · AKS](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
@@ -128,14 +136,29 @@ associated modules/questions (a dedicated Flyway migration, generated from the s
 
 ## Deploying
 
-`.github/workflows/deploy.yml` (`workflow_dispatch`, choice of `nonprod`/`prod`) builds the jar and deploys it
-to the Java App Service provisioned by the [azure-infra-terraform](https://github.com/alderichoarau/azure-infra-terraform)
-repo. Nothing is hardcoded: the target App Service is looked up by tag (`owner` + `environment` +
+Two independent tracks, both `workflow_dispatch` with a `nonprod`/`prod` choice — pick whichever this
+learner's infrastructure uses (see
+[azure-infra-terraform](https://github.com/alderichoarau/azure-infra-terraform)), not both against the same
+secrets.
+
+### App Service
+
+`.github/workflows/asp-deploy.yml` builds the jar and deploys it to the Java App Service provisioned by the
+infra repo. Nothing is hardcoded: the target App Service is looked up by tag (`owner` + `environment` +
 `component=quiz-backend`) at deploy time via Azure OIDC login, since its name embeds the learner's owner id.
 
-Piste AKS: `.github/workflows/aks-deploy.yml` builds the same image, pushes it to ACR, and `helm upgrade`s it
-onto the shared AKS cluster instead. Its Ingress gets a real Let's Encrypt cert (see the infra repo's
+### AKS
+
+`.github/workflows/aks-deploy.yml` builds the same image, pushes it to ACR, and `helm upgrade`s it onto the
+shared AKS cluster instead. Its Ingress gets a real Let's Encrypt cert (see the infra repo's
 `scripts/setup-cert-manager.sh`) rather than a self-signed one.
+
+### Releasing
+
+Run `release-prepare.yml` (`workflow_dispatch`, input `tag_name`, e.g. `v1.1.0`) — it bumps `pom.xml`'s
+`<version>` (via `versions-maven-plugin`, stripping the tag's leading `v`) and opens a PR. Squash-merging it
+yourself when ready (`release-push.yml`) tags the release, creates the GitHub release, and deploys the tag to
+**nonprod** on both tracks above.
 
 ## Out of scope for this repo
 
