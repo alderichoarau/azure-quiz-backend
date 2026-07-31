@@ -46,6 +46,7 @@ jobs:
     env:
       AZURE_RG_NAME: ${{ secrets.AZURE_RG_NAME }}
       AZURE_OWNER: ${{ secrets.AZURE_OWNER }}
+      ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7
@@ -72,11 +73,11 @@ jobs:
         run: |
           NAME=$(az resource list \
             --resource-group "$AZURE_RG_NAME" \
-            --query "[?type=='Microsoft.Web/sites' && tags.component=='quiz-backend' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --query "[?type=='Microsoft.Web/sites' && tags.component=='quiz-backend' && tags.owner=='$AZURE_OWNER' && tags.environment=='$ENVIRONMENT'].name | [0]" \
             -o tsv)
 
           if [ -z "$NAME" ]; then
-            echo "::error::No App Service found with owner=$AZURE_OWNER, environment=${{ inputs.environment }}, component=quiz-backend in resource group $AZURE_RG_NAME. Has terraform apply run for this environment?"
+            echo "::error::No App Service found with owner=$AZURE_OWNER, environment=$ENVIRONMENT, component=quiz-backend in resource group $AZURE_RG_NAME. Has terraform apply run for this environment?"
             exit 1
           fi
 
@@ -100,6 +101,6 @@ jobs:
       - name: "Job summary"
         if: always()
         run: |
-          echo "## Backend deploy — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Backend deploy — $ENVIRONMENT" >> "$GITHUB_STEP_SUMMARY"
           echo "- **App Service** : ${{ steps.find-app.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Actor** : @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"

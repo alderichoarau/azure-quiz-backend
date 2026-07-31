@@ -53,6 +53,7 @@ jobs:
     env:
       AZURE_RG_NAME: ${{ secrets.AZURE_RG_NAME }}
       AZURE_OWNER: ${{ secrets.AZURE_OWNER }}
+      ENVIRONMENT: ${{ inputs.environment }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7
@@ -69,10 +70,10 @@ jobs:
         run: |
           NAME=$(az resource list \
             --resource-group "$AZURE_RG_NAME" \
-            --query "[?type=='Microsoft.ContainerRegistry/registries' && tags.component=='quiz-registry' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --query "[?type=='Microsoft.ContainerRegistry/registries' && tags.component=='quiz-registry' && tags.owner=='$AZURE_OWNER' && tags.environment=='$ENVIRONMENT'].name | [0]" \
             -o tsv)
           if [ -z "$NAME" ]; then
-            echo "::error::No ACR found (owner=$AZURE_OWNER, environment=${{ inputs.environment }})."
+            echo "::error::No ACR found (owner=$AZURE_OWNER, environment=$ENVIRONMENT)."
             exit 1
           fi
           LOGIN_SERVER=$(az acr show --name "$NAME" --query loginServer -o tsv)
@@ -84,7 +85,7 @@ jobs:
         run: |
           NAME=$(az resource list \
             --resource-group "$AZURE_RG_NAME" \
-            --query "[?type=='Microsoft.KeyVault/vaults' && tags.component=='quiz-backend' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --query "[?type=='Microsoft.KeyVault/vaults' && tags.component=='quiz-backend' && tags.owner=='$AZURE_OWNER' && tags.environment=='$ENVIRONMENT'].name | [0]" \
             -o tsv)
           if [ -z "$NAME" ]; then
             echo "::error::No Key Vault found."
@@ -97,7 +98,7 @@ jobs:
         run: |
           NAME=$(az resource list \
             --resource-group "$AZURE_RG_NAME" \
-            --query "[?type=='Microsoft.Storage/storageAccounts' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --query "[?type=='Microsoft.Storage/storageAccounts' && tags.owner=='$AZURE_OWNER' && tags.environment=='$ENVIRONMENT'].name | [0]" \
             -o tsv)
           if [ -z "$NAME" ]; then
             echo "::error::No Storage Account found."
@@ -233,7 +234,7 @@ jobs:
       - name: "Job summary"
         if: always()
         run: |
-          echo "## Backend deploy (AKS) — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Backend deploy (AKS) — $ENVIRONMENT" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Namespace** : $AZURE_OWNER" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Image** : ${{ steps.find-acr.outputs.login_server }}/quiz-backend:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **URL** : https://$AZURE_OWNER-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" >> "$GITHUB_STEP_SUMMARY"

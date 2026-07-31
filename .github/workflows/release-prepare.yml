@@ -27,6 +27,8 @@ jobs:
   prepare:
     name: "Bump version & open release PR"
     runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ inputs.tag_name }}
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v7
@@ -45,8 +47,6 @@ jobs:
           # tags use (v1.1.0) -- strip it for pom.xml, the raw tag_name (with
           # "v") is still what becomes the git tag itself, further down.
           echo "value=${TAG_NAME#v}" >> "$GITHUB_OUTPUT"
-        env:
-          TAG_NAME: ${{ inputs.tag_name }}
 
       - name: "Bump pom.xml version"
         run: >
@@ -58,14 +58,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "release/${{ inputs.tag_name }}"
+          git checkout -b "release/$TAG_NAME"
           git add pom.xml
           if git diff --cached --quiet; then
             echo "pom.xml already at ${{ steps.mvn-version.outputs.value }}, nothing to bump" >&2
             exit 1
           fi
-          git commit -m "chore: bump version to ${{ inputs.tag_name }}"
-          git push origin "release/${{ inputs.tag_name }}"
+          git commit -m "chore: bump version to $TAG_NAME"
+          git push origin "release/$TAG_NAME"
 
       - name: "Open pull request"
         env:
@@ -73,6 +73,6 @@ jobs:
         run: |
           gh pr create \
             --base "${{ github.ref_name }}" \
-            --head "release/${{ inputs.tag_name }}" \
-            --title "chore: release ${{ inputs.tag_name }}" \
-            --body "Bumps pom.xml's version to \`${{ steps.mvn-version.outputs.value }}\`. **Merge this PR (squash) when ready to ship** — merging creates the \`${{ inputs.tag_name }}\` tag, the matching GitHub release, and deploys it to **nonprod** (AKS + App Service), see release-push.yml."
+            --head "release/$TAG_NAME" \
+            --title "chore: release $TAG_NAME" \
+            --body "Bumps pom.xml's version to \`${{ steps.mvn-version.outputs.value }}\`. **Merge this PR (squash) when ready to ship** — merging creates the \`$TAG_NAME\` tag, the matching GitHub release, and deploys it to **nonprod** (AKS + App Service), see release-push.yml."
