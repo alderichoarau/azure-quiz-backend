@@ -18,7 +18,6 @@ import com.azure.core.http.HttpResponse;
 import com.azure.storage.blob.BlobClient;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.models.BlobStorageException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tools.jackson.databind.json.JsonMapper;
 
 @ExtendWith(MockitoExtension.class)
 class QuizResultExportServiceTest {
@@ -38,7 +38,7 @@ class QuizResultExportServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new QuizResultExportService(resultsContainerClient, new ObjectMapper());
+        service = new QuizResultExportService(resultsContainerClient, JsonMapper.builder().build());
     }
 
     @Test

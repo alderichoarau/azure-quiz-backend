@@ -4,13 +4,13 @@ import com.alderichoarau.azurequiz.dto.QuizResultDto;
 import com.alderichoarau.azurequiz.exception.ResourceNotFoundException;
 import com.azure.storage.blob.BlobContainerClient;
 import com.azure.storage.blob.models.BlobStorageException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Simple, concrete use of the Storage Account (java-uploads container, see storage-java.tf /
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 public class QuizResultExportService {
 
     private final BlobContainerClient resultsContainerClient;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper jsonMapper;
 
     /**
      * Fire-and-forget: a Storage outage must never break the quiz flow for the student.
@@ -32,7 +32,7 @@ public class QuizResultExportService {
     public void export(QuizResultDto result) {
         String blobName = blobName(result.sessionId());
         try {
-            byte[] json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(result);
+            byte[] json = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(result);
             resultsContainerClient
                     .getBlobClient(blobName)
                     .upload(new ByteArrayInputStream(json), json.length, true);

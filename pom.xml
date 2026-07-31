@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.16</version>
+		<version>4.1.0</version>
 		<relativePath/>
 	</parent>
 
@@ -17,10 +17,10 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<springdoc-openapi.version>2.8.17</springdoc-openapi.version>
+		<springdoc-openapi.version>3.0.3</springdoc-openapi.version>
 		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<!-- AZURE -->
-		<spring-cloud-azure-dependencies.version>7.3.0</spring-cloud-azure-dependencies.version>
+		<spring-cloud-azure-dependencies.version>7.4.0</spring-cloud-azure-dependencies.version>
 		<azure-functions-maven-plugin.version>1.42.0</azure-functions-maven-plugin.version>
 	</properties>
 
@@ -45,6 +45,15 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<!-- Spring Boot 4 split spring-boot-autoconfigure into per-feature modules: the
+		     cache abstraction's auto-configuration (CacheAutoConfiguration,
+		     RedisCacheManagerBuilderCustomizer, backing @EnableCaching/@Cacheable in
+		     CertificationService/ModuleService) now only ends up on the classpath via this
+		     starter, not transitively through spring-boot-starter-data-redis alone. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
 		<!-- Auto-starts/stops docker-compose.yml (Postgres + Redis) whenever the app runs
 		     locally: IDE "Run", `./mvnw spring-boot:run`, tests. A plain "classic" run no
@@ -116,13 +125,6 @@
 	<build>
 		<resources>
 			<resource>
-				<!-- "*" (Ant pattern) only matches files directly in this directory, not
-				     subdirectories - it was silently excluding db/migration/*.sql (Flyway
-				     migrations), static/, and templates/ from the built jar. Flyway then
-				     found zero migrations to run, so no tables ever got created, and
-				     Hibernate's schema validation failed with "missing table [...]" at
-				     startup. "**" matches recursively, same as Maven's implicit default
-				     when no <includes> is set at all. -->
 				<filtering>true</filtering>
 				<directory>${basedir}/src/main/resources</directory>
 				<includes>
@@ -135,20 +137,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			<!-- Not managed by spring-boot-starter-parent's own BOM, so pinned
-			     explicitly (same convention as springdoc-openapi.version above).
-			     Without this plugin, `mvn verify` never produces
-			     target/site/jacoco/jacoco.xml, so sonar.yml's `sonar:sonar`
-			     goal has nothing to read and SonarCloud silently shows 0%
-			     coverage instead of erroring (hit live). prepare-agent
-			     instruments classes for the `test` phase; the `report`
-			     execution below turns the resulting .exec data into the XML
-			     Sonar expects, before `verify` finishes and `sonar:sonar` runs
-			     in the same mvn invocation. -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.15</version>
+				<version>${jacoco-maven-plugin.version}</version>
 				<executions>
 					<execution>
 						<goals>
