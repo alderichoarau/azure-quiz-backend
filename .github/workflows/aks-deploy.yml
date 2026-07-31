@@ -1,17 +1,13 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Deploys the backend to the mutualised AKS cluster (piste "AKS"). Separate
-# from deploy.yml (App Service track) -- run one or the other depending on
+# from asp-deploy.yml (App Service track) -- run one or the other depending on
 # which track this learner picked, not both against the same secrets.
 #
-# KNOWN GAP: Postgres is still Private-Endpoint/VNet-only in
-# azure-infra-terraform (database.tf) -- the shared AKS cluster lives outside
-# that VNet with no peering, so SPRING_DATASOURCE_URL below will not actually
-# be reachable from a pod until that's resolved (either a firewall-rule-based
-# public networking mode for Postgres, or VNet peering -- see database.tf's
-# comment). The backend WILL crash-loop on startup until this is fixed. Redis
-# and Storage are both already reachable (redis.tf's public_network_access =
-# "Enabled", storage was already public) -- only Postgres blocks a fully
-# working deploy today.
+# Postgres reachability: database.tf's postgres_public_access toggle defaults
+# to true (public access + firewall rule), which is what makes
+# SPRING_DATASOURCE_URL below actually reachable from a pod on the shared AKS
+# cluster (no VNet peering into learner RGs -- see that file's comment).
+# Switching that var back to false (VNet-only) would break this track again.
 # ─────────────────────────────────────────────────────────────────────────────
 name: AZ AKS - Deploy backend application
 run-name: "Deploy backend (AKS) · ${{ inputs.environment }} · @${{ github.actor }}"
@@ -44,6 +40,16 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Pins the OIDC subject to repo:<org>/<repo>:environment:<name> instead of
+    # ref:refs/heads/<branch> -- see azure-quiz-frontend's aks-deploy.yml for
+    # the full reasoning (a tag-triggered run would otherwise fail Azure
+    # login with AADSTS700213, no federated credential matches that ref).
+    # Backend has no tag-triggered release workflow yet, but this keeps both
+    # repos' identity model consistent and lets
+    # azure-infra-terraform/terraform-core/ci-app-deploy-identity.tf drop the
+    # old ref-based credential entirely instead of keeping two (ref + env)
+    # per repo.
+    environment: ${{ inputs.environment }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7

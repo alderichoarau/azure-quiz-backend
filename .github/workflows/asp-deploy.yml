@@ -33,6 +33,16 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Pins the OIDC subject to repo:<org>/<repo>:environment:<name> instead of
+    # ref:refs/heads/<branch> -- see azure-quiz-frontend's aks-deploy.yml for
+    # the full reasoning (a tag-triggered run would otherwise fail Azure
+    # login with AADSTS700213, no federated credential matches that ref).
+    # Backend has no tag-triggered release workflow yet, but this keeps both
+    # repos' identity model consistent and lets
+    # azure-infra-terraform/terraform-core/ci-app-deploy-identity.tf drop the
+    # old ref-based credential entirely instead of keeping two (ref + env)
+    # per repo.
+    environment: ${{ inputs.environment }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7
