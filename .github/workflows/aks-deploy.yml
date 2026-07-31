@@ -50,6 +50,9 @@ jobs:
     # old ref-based credential entirely instead of keeping two (ref + env)
     # per repo.
     environment: ${{ inputs.environment }}
+    env:
+      AZURE_RG_NAME: ${{ secrets.AZURE_RG_NAME }}
+      AZURE_OWNER: ${{ secrets.AZURE_OWNER }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7
@@ -65,11 +68,11 @@ jobs:
         id: find-acr
         run: |
           NAME=$(az resource list \
-            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
-            --query "[?type=='Microsoft.ContainerRegistry/registries' && tags.component=='quiz-registry' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --resource-group "$AZURE_RG_NAME" \
+            --query "[?type=='Microsoft.ContainerRegistry/registries' && tags.component=='quiz-registry' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
             -o tsv)
           if [ -z "$NAME" ]; then
-            echo "::error::No ACR found (owner=${{ secrets.AZURE_OWNER }}, environment=${{ inputs.environment }})."
+            echo "::error::No ACR found (owner=$AZURE_OWNER, environment=${{ inputs.environment }})."
             exit 1
           fi
           LOGIN_SERVER=$(az acr show --name "$NAME" --query loginServer -o tsv)
@@ -80,8 +83,8 @@ jobs:
         id: find-kv
         run: |
           NAME=$(az resource list \
-            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
-            --query "[?type=='Microsoft.KeyVault/vaults' && tags.component=='quiz-backend' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --resource-group "$AZURE_RG_NAME" \
+            --query "[?type=='Microsoft.KeyVault/vaults' && tags.component=='quiz-backend' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
             -o tsv)
           if [ -z "$NAME" ]; then
             echo "::error::No Key Vault found."
@@ -93,8 +96,8 @@ jobs:
         id: find-storage
         run: |
           NAME=$(az resource list \
-            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
-            --query "[?type=='Microsoft.Storage/storageAccounts' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --resource-group "$AZURE_RG_NAME" \
+            --query "[?type=='Microsoft.Storage/storageAccounts' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
             -o tsv)
           if [ -z "$NAME" ]; then
             echo "::error::No Storage Account found."
@@ -124,7 +127,7 @@ jobs:
           EXPIRY=$(date -u -d "+7 days" '+%Y-%m-%dT%H:%MZ')
           TOKEN=$(az storage container generate-sas \
             --account-name "${{ steps.find-storage.outputs.name }}" \
-            --name "java-uploads-${{ secrets.AZURE_OWNER }}" \
+            --name "java-uploads-$AZURE_OWNER" \
             --permissions racwdl \
             --expiry "$EXPIRY" \
             --auth-mode login \
@@ -167,7 +170,7 @@ jobs:
 
       - name: "Verify namespace exists"
         run: |
-          OUTPUT=$(kubectl get namespace "${{ secrets.AZURE_OWNER }}" 2>&1) || {
+          OUTPUT=$(kubectl get namespace "$AZURE_OWNER" 2>&1) || {
             # A cluster that's stopped/still starting (az aks start, e.g.
             # after cost-saving auto-stop) fails this exact same way as a
             # genuinely missing namespace -- kubectl can't tell "not found"
@@ -175,14 +178,14 @@ jobs:
             # actual error text. Surfacing it avoids chasing the wrong fix
             # (re-running bootstrap-aks-namespace.sh) when the real problem
             # is just "cluster isn't up yet, wait and retry".
-            echo "::error::Could not confirm namespace '${{ secrets.AZURE_OWNER }}' exists on $AKS_CLUSTER. If the error below mentions a connection timeout, the cluster is probably stopped/still starting (az aks start, wait a few minutes, retry). If it's a clean \"not found\", ask the trainer to run scripts/bootstrap-aks-namespace.sh (azure-infra-terraform). Raw output: $OUTPUT"
+            echo "::error::Could not confirm namespace '$AZURE_OWNER' exists on $AKS_CLUSTER. If the error below mentions a connection timeout, the cluster is probably stopped/still starting (az aks start, wait a few minutes, retry). If it's a clean \"not found\", ask the trainer to run scripts/bootstrap-aks-namespace.sh (azure-infra-terraform). Raw output: $OUTPUT"
             exit 1
           }
 
       - name: "Create/update Kubernetes Secret"
         run: |
           kubectl create secret generic quiz-backend-secrets \
-            -n "${{ secrets.AZURE_OWNER }}" \
+            -n "$AZURE_OWNER" \
             --from-literal=SPRING_DATASOURCE_URL="jdbc:postgresql://${{ steps.kv.outputs.postgres_host }}:5432/appdb?sslmode=require" \
             --from-literal=SPRING_DATASOURCE_USERNAME="${{ steps.kv.outputs.postgres_username }}" \
             --from-literal=SPRING_DATASOURCE_PASSWORD="${{ steps.kv.outputs.postgres_password }}" \
@@ -214,24 +217,24 @@ jobs:
       - name: "Helm upgrade"
         run: |
           helm upgrade --install quiz-backend ./helm \
-            --namespace "${{ secrets.AZURE_OWNER }}" \
+            --namespace "$AZURE_OWNER" \
             --set image.repository="${{ steps.find-acr.outputs.login_server }}/quiz-backend" \
             --set image.tag="${{ github.sha }}" \
-            --set ingress.host="${{ secrets.AZURE_OWNER }}-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" \
+            --set ingress.host="$AZURE_OWNER-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" \
             --set-string env.SPRING_PROFILES_ACTIVE=aks \
-            --set-string env.REDIS_HOSTNAME="redis-${{ secrets.AZURE_OWNER }}-tf.${{ env.AZURE_LOCATION }}.redis.azure.net" \
+            --set-string env.REDIS_HOSTNAME="redis-$AZURE_OWNER-tf.${{ env.AZURE_LOCATION }}.redis.azure.net" \
             --set-string env.REDIS_PORT="10000" \
             --set-string env.REDIS_SSL_ENABLED="true" \
             --set-string env.STORAGE_ACCOUNT_NAME="${{ steps.find-storage.outputs.name }}" \
-            --set-string env.STORAGE_CONTAINER_NAME="java-uploads-${{ secrets.AZURE_OWNER }}" \
-            --set-string env.APP_CORS_ALLOWED_ORIGINS="https://${{ secrets.AZURE_OWNER }}-frontend.${{ steps.ingress-ip.outputs.ip }}.nip.io" \
+            --set-string env.STORAGE_CONTAINER_NAME="java-uploads-$AZURE_OWNER" \
+            --set-string env.APP_CORS_ALLOWED_ORIGINS="https://$AZURE_OWNER-frontend.${{ steps.ingress-ip.outputs.ip }}.nip.io" \
             --wait --timeout 5m
 
       - name: "Job summary"
         if: always()
         run: |
           echo "## Backend deploy (AKS) — ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Namespace** : ${{ secrets.AZURE_OWNER }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Namespace** : $AZURE_OWNER" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Image** : ${{ steps.find-acr.outputs.login_server }}/quiz-backend:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **URL** : https://${{ secrets.AZURE_OWNER }}-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **URL** : https://$AZURE_OWNER-backend.${{ steps.ingress-ip.outputs.ip }}.nip.io" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Actor** : @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"

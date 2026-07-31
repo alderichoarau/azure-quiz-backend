@@ -43,6 +43,9 @@ jobs:
     # old ref-based credential entirely instead of keeping two (ref + env)
     # per repo.
     environment: ${{ inputs.environment }}
+    env:
+      AZURE_RG_NAME: ${{ secrets.AZURE_RG_NAME }}
+      AZURE_OWNER: ${{ secrets.AZURE_OWNER }}
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7
@@ -68,12 +71,12 @@ jobs:
         id: find-app
         run: |
           NAME=$(az resource list \
-            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
-            --query "[?type=='Microsoft.Web/sites' && tags.component=='quiz-backend' && tags.owner=='${{ secrets.AZURE_OWNER }}' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
+            --resource-group "$AZURE_RG_NAME" \
+            --query "[?type=='Microsoft.Web/sites' && tags.component=='quiz-backend' && tags.owner=='$AZURE_OWNER' && tags.environment=='${{ inputs.environment }}'].name | [0]" \
             -o tsv)
 
           if [ -z "$NAME" ]; then
-            echo "::error::No App Service found with owner=${{ secrets.AZURE_OWNER }}, environment=${{ inputs.environment }}, component=quiz-backend in resource group ${{ secrets.AZURE_RG_NAME }}. Has terraform apply run for this environment?"
+            echo "::error::No App Service found with owner=$AZURE_OWNER, environment=${{ inputs.environment }}, component=quiz-backend in resource group $AZURE_RG_NAME. Has terraform apply run for this environment?"
             exit 1
           fi
 
@@ -89,7 +92,7 @@ jobs:
           fi
           echo "Deploying $JAR_PATH to ${{ steps.find-app.outputs.name }}"
           az webapp deploy \
-            --resource-group "${{ secrets.AZURE_RG_NAME }}" \
+            --resource-group "$AZURE_RG_NAME" \
             --name "${{ steps.find-app.outputs.name }}" \
             --src-path "$JAR_PATH" \
             --type jar
