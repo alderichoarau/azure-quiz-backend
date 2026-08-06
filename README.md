@@ -22,7 +22,7 @@ like AZ-104 can be added later with no schema change — see "Data model" below)
 
 ## Stack
 
-- Java 21, Spring Boot 3.5.x, Maven
+- Java 21, Spring Boot 4.1.x, Maven
 - Spring Web, Spring Data JPA, PostgreSQL, Flyway, Bean Validation, Lombok, Actuator
 - Spring Data Redis (cache — see "Running locally" below)
 - Spring Cloud Azure Storage Blob (quiz result export — see "Running locally" below)
