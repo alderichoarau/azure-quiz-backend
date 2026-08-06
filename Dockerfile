@@ -6,7 +6,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 
 # ── Build stage ─────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-jammy AS build
+FROM eclipse-temurin:22-jdk-jammy AS build
 WORKDIR /app
 
 # Copy the wrapper + POM first so `./mvnw dependency:go-offline` is its own
@@ -26,7 +26,7 @@ RUN ./mvnw -B clean package -DskipTests
 
 # ── Runtime stage ────────────────────────────────────────────────────────────
 # JRE, not JDK -- smaller image, no compiler needed to run a prebuilt jar.
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:22-jre-jammy
 WORKDIR /app
 
 # Runs as non-root -- AKS's default Pod Security Standards (baseline/restricted,
