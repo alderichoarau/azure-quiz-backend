@@ -17,7 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<springdoc-openapi.version>3.0.3</springdoc-openapi.version>
+		<springdoc-openapi.version>3.1.0</springdoc-openapi.version>
 		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<!-- AZURE -->
 		<spring-cloud-azure-dependencies.version>7.4.0</spring-cloud-azure-dependencies.version>
