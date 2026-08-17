@@ -2,6 +2,7 @@ package com.alderichoarau.azurequiz.service;
 
 import com.alderichoarau.azurequiz.dto.AnswerOptionDto;
 import com.alderichoarau.azurequiz.dto.AnswerResultDto;
+import com.alderichoarau.azurequiz.dto.ContentBlockDto;
 import com.alderichoarau.azurequiz.dto.CreateQuizSessionRequest;
 import com.alderichoarau.azurequiz.dto.QuestionDto;
 import com.alderichoarau.azurequiz.dto.QuestionResultDto;
@@ -20,6 +21,7 @@ import com.alderichoarau.azurequiz.exception.InvalidQuizRequestException;
 import com.alderichoarau.azurequiz.exception.ResourceNotFoundException;
 import com.alderichoarau.azurequiz.repository.AnswerOptionRepository;
 import com.alderichoarau.azurequiz.repository.CertificationRepository;
+import com.alderichoarau.azurequiz.repository.QuestionContentBlockRepository;
 import com.alderichoarau.azurequiz.repository.QuestionRepository;
 import com.alderichoarau.azurequiz.repository.QuizAnswerRepository;
 import com.alderichoarau.azurequiz.repository.QuizModuleRepository;
@@ -55,6 +57,7 @@ public class QuizSessionService {
     private final QuizSessionRepository quizSessionRepository;
     private final QuizSessionQuestionRepository quizSessionQuestionRepository;
     private final QuizAnswerRepository quizAnswerRepository;
+    private final QuestionContentBlockRepository questionContentBlockRepository;
     private final QuizResultExportService quizResultExportService;
 
     public QuizSessionDto createSession(CreateQuizSessionRequest request) {
@@ -263,6 +266,11 @@ public class QuizSessionService {
         Collections.shuffle(shuffled);
         List<AnswerOptionDto> optionDtos =
                 shuffled.stream().map(o -> new AnswerOptionDto(o.getId(), o.getLabel())).toList();
-        return new QuestionDto(question.getId(), question.getStatement(), question.getType(), optionDtos);
+        List<ContentBlockDto> contentBlockDtos =
+                questionContentBlockRepository.findByQuestionIdOrderByPositionAsc(question.getId()).stream()
+                        .map(b -> new ContentBlockDto(b.getId(), b.getType(), b.getTextContent()))
+                        .toList();
+        return new QuestionDto(
+                question.getId(), question.getStatement(), question.getType(), optionDtos, contentBlockDtos);
     }
 }

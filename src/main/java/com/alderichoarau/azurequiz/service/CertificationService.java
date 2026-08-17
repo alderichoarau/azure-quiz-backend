@@ -38,7 +38,9 @@ public class CertificationService {
 
     private CertificationSummaryDto toSummaryDto(Certification certification) {
         long moduleCount =
-                moduleRepository.findAllByCertificationIdOrderByPositionAsc(certification.getId()).size();
+                moduleRepository
+                        .findAllByCertificationIdAndActiveTrueOrderByPositionAsc(certification.getId())
+                        .size();
         return new CertificationSummaryDto(
                 certification.getId(),
                 certification.getCode(),

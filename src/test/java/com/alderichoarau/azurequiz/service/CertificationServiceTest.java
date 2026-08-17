@@ -51,9 +51,10 @@ class CertificationServiceTest {
                         .build();
 
         when(certificationRepository.findAllByOrderByPositionAsc()).thenReturn(List.of(az900, az104));
-        when(moduleRepository.findAllByCertificationIdOrderByPositionAsc(az900Id))
+        when(moduleRepository.findAllByCertificationIdAndActiveTrueOrderByPositionAsc(az900Id))
                 .thenReturn(List.of(QuizModule.builder().id(UUID.randomUUID()).build()));
-        when(moduleRepository.findAllByCertificationIdOrderByPositionAsc(az104Id)).thenReturn(List.of());
+        when(moduleRepository.findAllByCertificationIdAndActiveTrueOrderByPositionAsc(az104Id))
+                .thenReturn(List.of());
 
         List<CertificationSummaryDto> result = service.getAllCertifications();
 

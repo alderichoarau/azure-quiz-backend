@@ -18,6 +18,7 @@ import com.alderichoarau.azurequiz.exception.InvalidQuizRequestException;
 import com.alderichoarau.azurequiz.exception.ResourceNotFoundException;
 import com.alderichoarau.azurequiz.repository.AnswerOptionRepository;
 import com.alderichoarau.azurequiz.repository.CertificationRepository;
+import com.alderichoarau.azurequiz.repository.QuestionContentBlockRepository;
 import com.alderichoarau.azurequiz.repository.QuestionRepository;
 import com.alderichoarau.azurequiz.repository.QuizAnswerRepository;
 import com.alderichoarau.azurequiz.repository.QuizModuleRepository;
@@ -42,6 +43,7 @@ class QuizSessionServiceTest {
     @Mock private QuizSessionRepository quizSessionRepository;
     @Mock private QuizSessionQuestionRepository quizSessionQuestionRepository;
     @Mock private QuizAnswerRepository quizAnswerRepository;
+    @Mock private QuestionContentBlockRepository questionContentBlockRepository;
     @Mock private QuizResultExportService quizResultExportService;
 
     private QuizSessionService service;
@@ -57,6 +59,7 @@ class QuizSessionServiceTest {
                         quizSessionRepository,
                         quizSessionQuestionRepository,
                         quizAnswerRepository,
+                        questionContentBlockRepository,
                         quizResultExportService);
     }
 

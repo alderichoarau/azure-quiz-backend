@@ -9,6 +9,11 @@ spring:
     enabled: true
   cache:
     type: redis
+  servlet:
+    multipart:
+      # Default 1MB is too small for the admin question-authoring form's image uploads.
+      max-file-size: 10MB
+      max-request-size: 25MB
   data:
     redis:
       # Locally: docker-compose's "redis" service, plaintext, no password.
@@ -39,8 +44,14 @@ app:
     # In prod, Azure App Service injects BACKEND_API_KEY (from Key Vault via
     # Terraform, see app-service-java.tf) and the filter starts enforcing it.
     api-key: ${BACKEND_API_KEY:}
+    # Deliberately separate from api-key above: that one is shipped inside the public frontend
+    # bundle (fine for read/quiz-taking traffic), so it can't also gate the admin content-authoring
+    # endpoints (AdminApiKeyFilter, /api/admin/**). This one is never built into the frontend; the
+    # admin UI prompts for it once and keeps it in sessionStorage only.
+    admin-key: ${ADMIN_API_KEY:}
   storage:
     container-name: ${STORAGE_CONTAINER_NAME:quiz-results-local}
+    question-images-container-name: ${QUESTION_IMAGES_CONTAINER_NAME:quiz-question-images-local}
 
 logging:
   level:

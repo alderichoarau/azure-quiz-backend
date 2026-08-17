@@ -57,7 +57,7 @@ class ModuleServiceTest {
                         .build();
 
         when(certificationRepository.existsById(certificationId)).thenReturn(true);
-        when(moduleRepository.findAllByCertificationIdOrderByPositionAsc(certificationId))
+        when(moduleRepository.findAllByCertificationIdAndActiveTrueOrderByPositionAsc(certificationId))
                 .thenReturn(List.of(module));
         when(questionRepository.countByModuleIdAndActiveTrue(moduleId)).thenReturn(15L);
 

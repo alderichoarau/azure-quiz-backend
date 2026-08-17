@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
  * spring-cloud-azure-starter-storage-blob} from {@code spring.cloud.azure.storage.blob.*}
  * (application.yml) -- account-name + this Web App's managed identity in prod, a container-scoped
  * SAS token on aks, a plain connection-string against local Azurite in dev. This class only
- * narrows that down to the one container the backend actually uses.
+ * narrows that down to the containers the backend actually uses.
  */
 @Configuration
 public class StorageConfig {
@@ -20,9 +20,24 @@ public class StorageConfig {
     @Value("${app.storage.container-name}")
     private String containerName;
 
+    @Value("${app.storage.question-images-container-name}")
+    private String questionImagesContainerName;
+
     @Bean
     public BlobContainerClient resultsContainerClient(BlobServiceClient blobServiceClient) {
-        BlobContainerClient client = blobServiceClient.getBlobContainerClient(containerName);
+        return containerClient(blobServiceClient, containerName);
+    }
+
+    /** Separate container from {@link #resultsContainerClient} — admin-uploaded question images
+     * (see AdminContentService) are unrelated content with their own lifecycle; keeping them apart
+     * makes it possible to migrate/backup/purge one without touching the other. */
+    @Bean
+    public BlobContainerClient questionImagesContainerClient(BlobServiceClient blobServiceClient) {
+        return containerClient(blobServiceClient, questionImagesContainerName);
+    }
+
+    private BlobContainerClient containerClient(BlobServiceClient blobServiceClient, String name) {
+        BlobContainerClient client = blobServiceClient.getBlobContainerClient(name);
         // In prod (managed identity) this container already exists (Terraform's storage-java.tf)
         // and createIfNotExists is a fast no-op. Locally, against a fresh Azurite instance, this
         // is what actually creates it.

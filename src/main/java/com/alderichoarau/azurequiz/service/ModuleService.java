@@ -34,7 +34,9 @@ public class ModuleService {
             throw new ResourceNotFoundException("Certification not found: " + certificationId);
         }
         List<ModuleSummaryDto> modules =
-                moduleRepository.findAllByCertificationIdOrderByPositionAsc(certificationId).stream()
+                moduleRepository
+                        .findAllByCertificationIdAndActiveTrueOrderByPositionAsc(certificationId)
+                        .stream()
                         .map(this::toSummaryDto)
                         .toList();
         log.debug("Found {} modules for certification {}", modules.size(), certificationId);

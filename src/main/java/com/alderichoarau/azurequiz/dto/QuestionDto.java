@@ -5,4 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 public record QuestionDto(
-        UUID questionId, String statement, QuestionType type, List<AnswerOptionDto> options) {}
+        UUID questionId,
+        String statement,
+        QuestionType type,
+        List<AnswerOptionDto> options,
+        List<ContentBlockDto> contentBlocks) {}

@@ -20,14 +20,14 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "module")
+@Table(name = "question_content_block")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class QuizModule {
+public class QuestionContentBlock {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -35,25 +35,22 @@ public class QuizModule {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "certification_id", nullable = false)
-    private Certification certification;
-
-    @Column(nullable = false, length = 50)
-    private String code;
-
-    @Column(nullable = false, length = 200)
-    private String title;
-
-    @Column(columnDefinition = "text")
-    private String description;
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
     @Column(nullable = false)
     private int position;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private ModuleType type;
+    @Column(nullable = false, length = 10)
+    private ContentBlockType type;
 
-    @Column(nullable = false)
-    private boolean active;
+    @Column(name = "text_content", columnDefinition = "text")
+    private String textContent;
+
+    @Column(name = "image_blob_name", length = 300)
+    private String imageBlobName;
+
+    @Column(name = "image_content_type", length = 100)
+    private String imageContentType;
 }

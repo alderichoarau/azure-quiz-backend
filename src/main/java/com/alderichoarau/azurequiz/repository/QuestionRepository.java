@@ -11,6 +11,10 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
 
     long countByModuleIdAndActiveTrue(UUID moduleId);
 
+    // Admin question-management list (edit/delete) — only active questions are shown; a
+    // soft-deleted question is meant to disappear from view, not linger as "deleted" in the list.
+    List<Question> findByModuleIdAndActiveTrueOrderByPositionAsc(UUID moduleId);
+
     @Query(
             value =
                     "SELECT * FROM question WHERE module_id = :moduleId AND active = true ORDER BY"
