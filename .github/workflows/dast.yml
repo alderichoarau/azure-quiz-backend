@@ -1,0 +1,130 @@
+# -----------------------------------------------------------------------------------------------
+# DAST (Dynamic Application Security Testing): attacks the *running* API from the outside, unlike
+# every other scan in this repo which reads source/config without executing it.
+#
+# Unlike a browser-facing app (see azure-quiz-frontend's baseline scan), this is a pure JSON REST
+# API with no HTML to crawl -- a plain baseline scan would barely find anything beyond the root.
+# springdoc-openapi already exposes a full spec at /v3/api-docs (verified locally: 12 documented
+# paths), so this uses zaproxy/action-api-scan instead, which imports that spec and tests every
+# documented endpoint directly. Note this action performs *active* testing (real attack payloads
+# against each endpoint), not just passive checks -- fine here since the target is a disposable
+# local instance seeded by Flyway's own migrations, never a real deployment.
+#
+# The instance is backed by real Postgres/Redis/Azurite via docker-compose.yml (same stack used
+# for local dev) -- the app's "default" Spring profile already points at localhost:5432/6379/10000
+# to match it, no extra wiring needed.
+#
+# Runs on push to main + manual dispatch only, not on every PR: booting Postgres/Redis/the JVM
+# plus a full ZAP API scan is the slowest job of the security suite, and its value on a
+# not-yet-deployed branch is marginal. Switch to `pull_request` triggers too if you'd rather get
+# this signal pre-merge.
+# -----------------------------------------------------------------------------------------------
+name: "GitHub - Security (DAST): OWASP ZAP API Scan"
+run-name: Security (DAST) - OWASP ZAP API Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: 21
+  JAVA_DISTRIBUTION: temurin
+
+permissions:
+  contents: read
+
+jobs:
+  zap-api-scan:
+    name: "OWASP ZAP API scan"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v7
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v6
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: "Start Postgres / Redis / Azurite"
+        run: docker compose up -d postgres redis azurite
+
+      - name: "Wait for Postgres to be healthy"
+        run: |
+          for i in $(seq 1 30); do
+            docker compose exec -T postgres pg_isready -U quizz -d quizz && exit 0
+            sleep 1
+          done
+          echo "Postgres never became ready" >&2
+          exit 1
+
+      - name: "Build (skip tests, already covered by build-all.yml)"
+        run: ./mvnw -B clean package -DskipTests
+
+      - name: "Run the API in the background"
+        run: nohup java -jar target/azure-quiz-backend-*.jar > backend.log 2>&1 &
+
+      - name: "Wait for the API to be ready"
+        run: |
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:8080/actuator/health > /dev/null && exit 0
+            sleep 1
+          done
+          echo "API never became ready" >&2
+          cat backend.log
+          exit 1
+
+      - name: "Run ZAP API scan (OpenAPI spec)"
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: "http://localhost:8080/v3/api-docs"
+          format: openapi
+          fail_action: false
+          allow_issue_writing: false
+          # No cmd_options here: the action already writes report_html.html /
+          # report_md.md / report_json.json by default. Overriding those names
+          # via -r/-w/-J broke this same action family's finalize/artifact-
+          # upload step in azure-quiz-frontend's dast.yml -- hit live there
+          # ("report_md.md does not exist"), not repeating it here.
+
+      - name: "Publish alert summary to job summary"
+        if: always()
+        run: |
+          if [ ! -f report_md.md ]; then
+            echo "⚠️ report_md.md not found -- ZAP markdown report wasn't generated (check the 'Run ZAP API scan' step above)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "## 🔍 OWASP ZAP API Scan — Summary of Alerts"
+            echo
+            # Slice out just the "Summary of Alerts" section (a heading + its
+            # table) from the full report -- everything up to the next
+            # level-2 heading (e.g. "## Alert Detail").
+            SUMMARY=$(awk '
+              /^## Summary of Alerts/ { found=1 }
+              found && /^## / && !/^## Summary of Alerts/ { exit }
+              found { print }
+            ' report_md.md)
+
+            if [ -n "$SUMMARY" ]; then
+              echo "$SUMMARY"
+            else
+              echo "_Could not locate a \"Summary of Alerts\" section in the report -- see the full report below._"
+            fi
+
+            echo
+            echo "<details><summary>Full ZAP report (Markdown)</summary>"
+            echo
+            cat report_md.md
+            echo
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,89 @@
+# -----------------------------------------------------------------------------------------------
+# Container & IaC security: this repo ships a real Dockerfile + Helm chart (AKS track, see
+# aks-deploy.yml), so both the infra-as-code definitions and the built image itself are worth
+# scanning:
+#   - iac-misconfig -- Trivy's misconfig scanner over Dockerfile / helm/ (bad practices: running
+#     as root, missing resource limits, permissive defaults, ...)
+#   - image-scan    -- builds the image exactly like aks-deploy.yml does, then scans it (OS
+#     packages + the packaged jar's own dependencies) for known CVEs.
+# -----------------------------------------------------------------------------------------------
+name: "GitHub - Security (Container & IaC): Trivy Scan"
+run-name: Security (Container & IaC) - Trivy Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  iac-misconfig:
+    name: "Trivy (Dockerfile / Helm misconfig)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Scan IaC for misconfigurations (trivy)"
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scanners: misconfig
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          hide-progress: true
+          output: trivy-iac.txt
+
+      - name: "Publish results to job summary"
+        if: always()
+        run: |
+          if [ -s trivy-iac.txt ]; then
+            {
+              echo "## 🛡️ Trivy — Dockerfile / Helm Misconfigurations"
+              echo '```'
+              cat trivy-iac.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  image-scan:
+    name: "Trivy (built image CVEs)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Build image"
+        run: docker build -t quiz-backend:ci-scan .
+
+      - name: "Scan image for known CVEs (trivy)"
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: quiz-backend:ci-scan
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          hide-progress: true
+          output: trivy-image.txt
+
+      - name: "Publish results to job summary"
+        if: always()
+        run: |
+          if [ -s trivy-image.txt ]; then
+            {
+              echo "## 🛡️ Trivy — Built Image CVEs"
+              echo '```'
+              cat trivy-image.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

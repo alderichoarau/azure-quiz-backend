@@ -1,0 +1,57 @@
+# -----------------------------------------------------------------------------------------------
+# SCA (Software Composition Analysis): looks for known CVEs in third-party dependencies.
+# Complements dependency-review.yml (which only diffs *new* deps introduced by a PR) by checking
+# the *current* dependency tree on every run.
+#
+# Trivy alone (not OWASP dependency-check-maven): dependency-check needs an NVD API key to avoid
+# heavy rate-limiting and downloads a multi-GB CVE database on a cold cache -- too slow/flaky for
+# a PR check here. Trivy reads pom.xml directly, no `mvn` build needed first, and its DB is a
+# single ~110MB pull cached by the runner.
+# -----------------------------------------------------------------------------------------------
+name: "GitHub - Security (SCA): Dependency Vulnerability Scan"
+run-name: Security (SCA) - Dependency Vulnerability Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  trivy-vuln:
+    name: "Trivy (dependency vulnerabilities)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Scan dependencies for known CVEs (trivy)"
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          hide-progress: true
+          output: trivy-sca.txt
+
+      - name: "Publish results to job summary"
+        if: always()
+        run: |
+          if [ -s trivy-sca.txt ]; then
+            {
+              echo "## 🛡️ Trivy — Dependency Vulnerabilities"
+              echo '```'
+              cat trivy-sca.txt
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
