@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Python (scripts/import_az104_review_questions.py) ###
+__pycache__/
+*.pyc
