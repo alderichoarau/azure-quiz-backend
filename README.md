@@ -11,7 +11,11 @@ certifications need no schema change, see "Data model" below).
 
 ## Last analysis
 [![CI · Build all](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml)
-[![GitHub - Sonar Cloud Analysis](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml)
+[![Security · SAST (SonarCloud)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml)
+[![Security · SCA](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sca.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sca.yml)
+[![Security · Secrets](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/secrets-scan.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/secrets-scan.yml)
+[![Security · Container & IaC](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/container.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/container.yml)
+[![Security · DAST (OWASP ZAP)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml)
 [![Deploy · App Service](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml)
 [![Deploy · AKS](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
