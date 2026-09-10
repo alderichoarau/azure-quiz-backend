@@ -7,6 +7,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MultipartException;
 
 @Slf4j
 @RestControllerAdvice
@@ -22,6 +23,17 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInvalidRequest(InvalidQuizRequestException ex) {
         log.warn("Invalid quiz request: {}", ex.getMessage());
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // Malformed/truncated multipart bodies (a corrupt boundary, a stream that stops mid-part)
+    // aren't covered by Spring's own DefaultHandlerExceptionResolver -- an uncaught
+    // MultipartException fell through to a raw 500, found by the DAST scan (dast.yml) fuzzing
+    // the admin question-authoring endpoints' "images" part. A malformed request body is a
+    // client error, not a server one.
+    @ExceptionHandler(MultipartException.class)
+    public ProblemDetail handleMultipart(MultipartException ex) {
+        log.warn("Malformed multipart request: {}", ex.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Malformed request body");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
