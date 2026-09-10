@@ -16,6 +16,17 @@ spec:
         app.kubernetes.io/name: {{ .Chart.Name }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
+      securityContext:
+        # Makes the /tmp emptyDir below writable by GID 1001, matching the
+        # container's runAsUser/runAsGroup -- needed because
+        # readOnlyRootFilesystem (below) pushes the JVM/embedded Tomcat's only
+        # writable path (multipart upload buffering under java.io.tmpdir,
+        # default /tmp) out into a volume instead of the image's own
+        # (otherwise read-only) root fs. No other local disk write exists in
+        # this app: uploads go straight to Azure Blob Storage, exports too
+        # (QuizResultExportService), nothing under src/main/java touches the
+        # filesystem directly.
+        fsGroup: 1001
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -54,3 +65,17 @@ spec:
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
+            runAsGroup: 1001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
