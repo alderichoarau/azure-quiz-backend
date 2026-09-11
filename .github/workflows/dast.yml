@@ -1,23 +1,15 @@
 # -----------------------------------------------------------------------------------------------
 # DAST (Dynamic Application Security Testing): attacks the *running* API from the outside, unlike
-# every other scan in this repo which reads source/config without executing it.
+# every other scan here which only reads source/config.
 #
-# Unlike a browser-facing app (see azure-quiz-frontend's baseline scan), this is a pure JSON REST
-# API with no HTML to crawl -- a plain baseline scan would barely find anything beyond the root.
-# springdoc-openapi already exposes a full spec at /v3/api-docs (verified locally: 12 documented
-# paths), so this uses zaproxy/action-api-scan instead, which imports that spec and tests every
-# documented endpoint directly. Note this action performs *active* testing (real attack payloads
-# against each endpoint), not just passive checks -- fine here since the target is a disposable
-# local instance seeded by Flyway's own migrations, never a real deployment.
-#
-# The instance is backed by real Postgres/Redis/Azurite via docker-compose.yml (same stack used
-# for local dev) -- the app's "default" Spring profile already points at localhost:5432/6379/10000
-# to match it, no extra wiring needed.
+# Pure JSON API, no HTML to crawl -- a passive baseline scan (used in azure-quiz-frontend) would
+# find almost nothing. springdoc-openapi exposes a full spec at /v3/api-docs (12 documented
+# paths), so this uses zaproxy/action-api-scan instead: it imports the spec and actively attacks
+# every route. Fine here since the target is a disposable local instance, never a real deployment.
 #
 # Runs on push to main + manual dispatch only, not on every PR: booting Postgres/Redis/the JVM
-# plus a full ZAP API scan is the slowest job of the security suite, and its value on a
-# not-yet-deployed branch is marginal. Switch to `pull_request` triggers too if you'd rather get
-# this signal pre-merge.
+# plus a full ZAP API scan is the slowest job in the suite, and its value on a not-yet-deployed
+# branch is marginal. Add `pull_request` too if you want this signal pre-merge instead.
 # -----------------------------------------------------------------------------------------------
 name: "GitHub - Security (DAST): OWASP ZAP API Scan"
 run-name: Security (DAST) - OWASP ZAP API Scan
@@ -89,11 +81,10 @@ jobs:
           format: openapi
           fail_action: false
           allow_issue_writing: false
-          # No cmd_options here: the action already writes report_html.html /
-          # report_md.md / report_json.json by default. Overriding those names
-          # via -r/-w/-J broke this same action family's finalize/artifact-
-          # upload step in azure-quiz-frontend's dast.yml -- hit live there
-          # ("report_md.md does not exist"), not repeating it here.
+          # No cmd_options: this action already writes report_html.html/report_md.md/
+          # report_json.json by default. Renaming them via -r/-w/-J broke the artifact-upload
+          # step in azure-quiz-frontend's dast.yml ("report_md.md does not exist") -- not
+          # repeating that here.
 
       - name: "Publish alert summary to job summary"
         if: always()
@@ -106,9 +97,8 @@ jobs:
           {
             echo "## 🔍 OWASP ZAP API Scan — Summary of Alerts"
             echo
-            # Slice out just the "Summary of Alerts" section (a heading + its
-            # table) from the full report -- everything up to the next
-            # level-2 heading (e.g. "## Alert Detail").
+            # Slice out the "Summary of Alerts" section -- everything up to the next level-2
+            # heading (e.g. "## Alert Detail").
             SUMMARY=$(awk '
               /^## Summary of Alerts/ { found=1 }
               found && /^## / && !/^## Summary of Alerts/ { exit }

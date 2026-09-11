@@ -9,14 +9,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Sets a minimal set of security response headers on every request — found missing by the DAST
- * scan (dast.yml: {@code X-Content-Type-Options}, {@code Cross-Origin-Resource-Policy}).
+ * Sets a minimal set of security response headers, found missing by the DAST scan (dast.yml).
  *
- * <p>Unlike azure-quiz-frontend (nginx sits in front of the static bundle, see its {@code
- * nginx.conf}), this API has no reverse proxy in either deploy track (Dockerfile runs the jar's
- * embedded Tomcat directly) — headers have to be set at the application layer instead. No CSP
- * here: this is a pure JSON API, not an HTML-serving app, so a content-security-policy header
- * (meant to constrain what a *browser* renders) doesn't apply the way it does for the frontend.
+ * <p>Unlike azure-quiz-frontend (nginx serves the static bundle), this API has no reverse proxy
+ * in either deploy track (Dockerfile runs the jar directly) — headers are set here instead. No
+ * CSP: this is a JSON API, not HTML, so a content-security-policy header doesn't apply.
  */
 @Component
 public class SecurityHeadersFilter extends OncePerRequestFilter {
@@ -28,10 +25,9 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         response.setHeader("X-Content-Type-Options", "nosniff");
         response.setHeader("X-Frame-Options", "DENY");
         response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-        // cross-origin, not same-origin: this API is deliberately consumed cross-origin by
-        // azure-quiz-frontend (a different domain in every deploy track, see app.cors.*
-        // above/application.yml) -- same-origin would make CORP itself block those legitimate
-        // requests in enforcing browsers, on top of (not instead of) the existing CORS config.
+        // cross-origin, not same-origin: the frontend calls this API from a different domain in
+        // every deploy track (app.cors.*) -- same-origin would make CORP block those legitimate
+        // requests too.
         response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
         filterChain.doFilter(request, response);
     }

@@ -19,10 +19,9 @@
 		<java.version>21</java.version>
 		<springdoc-openapi.version>3.1.0</springdoc-openapi.version>
 		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
-		<!-- Spring Boot 4.1.1's parent BOM manages 11.0.24, which has 3 CRITICAL CVEs
-		     (CVE-2026-65182, CVE-2026-65905, CVE-2026-68525: auth bypass / access control,
-		     found by the SCA scan, sca.yml) fixed in 11.0.25. Overrides the BOM-managed
-		     version; drop this once spring-boot-starter-parent ships >= 11.0.25 itself. -->
+		<!-- spring-boot-starter-parent:4.1.1 manages 11.0.24, which has 3 CRITICAL CVEs (auth
+		     bypass, found by sca.yml) fixed in 11.0.25. Drop this override once the parent BOM
+		     catches up. -->
 		<tomcat.version>11.0.25</tomcat.version>
 		<!-- AZURE -->
 		<spring-cloud-azure-dependencies.version>7.4.0</spring-cloud-azure-dependencies.version>

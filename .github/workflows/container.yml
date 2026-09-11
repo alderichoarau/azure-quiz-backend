@@ -1,11 +1,8 @@
 # -----------------------------------------------------------------------------------------------
-# Container & IaC security: this repo ships a real Dockerfile + Helm chart (AKS track, see
-# aks-deploy.yml), so both the infra-as-code definitions and the built image itself are worth
-# scanning:
-#   - iac-misconfig -- Trivy's misconfig scanner over Dockerfile / helm/ (bad practices: running
-#     as root, missing resource limits, permissive defaults, ...)
-#   - image-scan    -- builds the image exactly like aks-deploy.yml does, then scans it (OS
-#     packages + the packaged jar's own dependencies) for known CVEs.
+# Container & IaC: the Dockerfile + Helm chart (AKS track) are worth scanning on two axes:
+#   - iac-misconfig -- Trivy's misconfig scanner over Dockerfile/helm/ (root by default, missing
+#     resource limits, ...)
+#   - image-scan    -- builds the image like aks-deploy.yml does, scans it (OS + jar deps) for CVEs.
 # -----------------------------------------------------------------------------------------------
 name: "GitHub - Security (Container & IaC): Trivy Scan"
 run-name: Security (Container & IaC) - Trivy Scan

@@ -25,11 +25,10 @@ public class GlobalExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    // Malformed/truncated multipart bodies (a corrupt boundary, a stream that stops mid-part)
-    // aren't covered by Spring's own DefaultHandlerExceptionResolver -- an uncaught
-    // MultipartException fell through to a raw 500, found by the DAST scan (dast.yml) fuzzing
-    // the admin question-authoring endpoints' "images" part. A malformed request body is a
-    // client error, not a server one.
+    // Malformed/truncated multipart bodies (corrupt boundary, truncated stream) aren't covered
+    // by Spring's default exception resolver -- fell through to a raw 500, found by dast.yml
+    // fuzzing the admin endpoints' "images" part. A malformed body is a client error, not a
+    // server one.
     @ExceptionHandler(MultipartException.class)
     public ProblemDetail handleMultipart(MultipartException ex) {
         log.warn("Malformed multipart request: {}", ex.getMessage());

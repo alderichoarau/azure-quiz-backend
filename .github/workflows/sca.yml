@@ -1,12 +1,10 @@
 # -----------------------------------------------------------------------------------------------
 # SCA (Software Composition Analysis): looks for known CVEs in third-party dependencies.
-# Complements dependency-review.yml (which only diffs *new* deps introduced by a PR) by checking
-# the *current* dependency tree on every run.
+# Complements dependency-review.yml (diffs only *new* deps in a PR) by checking the *current*
+# dependency tree every run.
 #
-# Trivy alone (not OWASP dependency-check-maven): dependency-check needs an NVD API key to avoid
-# heavy rate-limiting and downloads a multi-GB CVE database on a cold cache -- too slow/flaky for
-# a PR check here. Trivy reads pom.xml directly, no `mvn` build needed first, and its DB is a
-# single ~110MB pull cached by the runner.
+# Trivy only, not OWASP dependency-check-maven: that plugin needs an NVD API key to avoid
+# rate-limiting and downloads a multi-GB DB on a cold cache -- too slow/flaky for a PR check.
 # -----------------------------------------------------------------------------------------------
 name: "GitHub - Security (SCA): Dependency Vulnerability Scan"
 run-name: Security (SCA) - Dependency Vulnerability Scan
