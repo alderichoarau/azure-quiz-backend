@@ -7,7 +7,11 @@ services:
       POSTGRES_USER: quizz
       POSTGRES_PASSWORD: quizz
     ports:
-      - "5432:5432"
+      # Host port 5433, not 5432: avoids silently colliding with a locally-installed Postgres
+      # already listening on 5432 (e.g. a Homebrew service) -- `localhost` can resolve to that one
+      # instead of this container depending on IPv4/IPv6 resolution order, which is very confusing
+      # to debug (queries and migrations appear to hit an empty DB while actually landing elsewhere).
+      - "5433:5432"
     volumes:
       - quizz-db-data:/var/lib/postgresql/data
     healthcheck:
