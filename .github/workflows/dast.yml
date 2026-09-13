@@ -11,8 +11,8 @@
 # plus a full ZAP API scan is the slowest job in the suite, and its value on a not-yet-deployed
 # branch is marginal. Add `pull_request` too if you want this signal pre-merge instead.
 # -----------------------------------------------------------------------------------------------
-name: "GitHub - Security (DAST): OWASP ZAP API Scan"
-run-name: Security (DAST) - OWASP ZAP API Scan
+name: "Security (DAST): OWASP ZAP API Scan"
+run-name: Security (DAST) - Run OWASP ZAP API Scan
 
 on:
   workflow_dispatch:

@@ -4,8 +4,8 @@
 #     resource limits, ...)
 #   - image-scan    -- builds the image like aks-deploy.yml does, scans it (OS + jar deps) for CVEs.
 # -----------------------------------------------------------------------------------------------
-name: "GitHub - Security (Container & IaC): Trivy Scan"
-run-name: Security (Container & IaC) - Trivy Scan
+name: "Security (Container & IaC): Trivy Scan"
+run-name: Security (Container & IaC) - Run Trivy Scan
 
 on:
   workflow_dispatch:
