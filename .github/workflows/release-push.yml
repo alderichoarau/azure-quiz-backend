@@ -59,7 +59,13 @@ jobs:
         run: |
           # Releases created with GITHUB_TOKEN don't emit events that trigger
           # other workflows, so both deploy workflows are dispatched
-          # explicitly here, pinned to this tag.
+          # explicitly here, pinned to this tag. This step only fires the
+          # dispatch and returns immediately -- it does NOT wait for the
+          # deploy jobs themselves. The actual gate is the "nonprod" GitHub
+          # Environment's required-reviewer rule (repo Settings > Environments),
+          # which both aks-deploy.yml and asp-deploy.yml's deploy jobs target
+          # (`environment: ${{ inputs.environment }}`): each run pauses there
+          # for manual approval before anything actually deploys.
           gh workflow run aks-deploy.yml --ref "${{ steps.tag.outputs.name }}" -f environment=nonprod
           gh workflow run asp-deploy.yml --ref "${{ steps.tag.outputs.name }}" -f environment=nonprod
 
@@ -68,5 +74,5 @@ jobs:
         run: |
           echo "## Release pushed — ${{ steps.tag.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Tag** : ${{ steps.tag.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Deployed to** : nonprod (AKS + App Service)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Deploy triggered for** : nonprod (AKS + App Service) — awaiting manual approval on the \`nonprod\` environment before either actually runs" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Actor** : @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
