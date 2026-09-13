@@ -17,7 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
-		<springdoc-openapi.version>3.1.0</springdoc-openapi.version>
+		<springdoc-openapi.version>3.1.1</springdoc-openapi.version>
 		<jacoco-maven-plugin.version>0.8.15</jacoco-maven-plugin.version>
 		<!-- spring-boot-starter-parent:4.1.1 manages 11.0.24, which has 3 CRITICAL CVEs (auth
 		     bypass, found by sca.yml) fixed in 11.0.25. Drop this override once the parent BOM
