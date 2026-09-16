@@ -9,4 +9,5 @@ public record CreateQuizSessionRequest(
         @NotNull QuizMode mode,
         UUID certificationId,
         UUID moduleId,
-        @Positive Integer questionCount) {}
+        @Positive Integer questionCount,
+        @NotNull UUID personId) {}

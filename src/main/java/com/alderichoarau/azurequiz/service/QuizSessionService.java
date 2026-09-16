@@ -17,10 +17,12 @@ import com.alderichoarau.azurequiz.entity.QuizMode;
 import com.alderichoarau.azurequiz.entity.QuizModule;
 import com.alderichoarau.azurequiz.entity.QuizSession;
 import com.alderichoarau.azurequiz.entity.QuizSessionQuestion;
+import com.alderichoarau.azurequiz.entity.Person;
 import com.alderichoarau.azurequiz.exception.InvalidQuizRequestException;
 import com.alderichoarau.azurequiz.exception.ResourceNotFoundException;
 import com.alderichoarau.azurequiz.repository.AnswerOptionRepository;
 import com.alderichoarau.azurequiz.repository.CertificationRepository;
+import com.alderichoarau.azurequiz.repository.PersonRepository;
 import com.alderichoarau.azurequiz.repository.QuestionContentBlockRepository;
 import com.alderichoarau.azurequiz.repository.QuestionRepository;
 import com.alderichoarau.azurequiz.repository.QuizAnswerRepository;
@@ -59,6 +61,7 @@ public class QuizSessionService {
     private final QuizAnswerRepository quizAnswerRepository;
     private final QuestionContentBlockRepository questionContentBlockRepository;
     private final QuizResultExportService quizResultExportService;
+    private final PersonRepository personRepository;
 
     public QuizSessionDto createSession(CreateQuizSessionRequest request) {
         log.info(
@@ -67,6 +70,11 @@ public class QuizSessionService {
                 request.moduleId(),
                 request.certificationId(),
                 request.questionCount());
+        Person person =
+                personRepository
+                        .findById(request.personId())
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException("Person not found: " + request.personId()));
         QuizModule module = null;
         Certification certification;
         List<Question> questions;
@@ -118,6 +126,7 @@ public class QuizSessionService {
                         .mode(request.mode())
                         .certification(certification)
                         .module(module)
+                        .person(person)
                         .questionCount(questions.size())
                         .createdAt(Instant.now())
                         .build();

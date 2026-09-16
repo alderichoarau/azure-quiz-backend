@@ -9,6 +9,7 @@ import com.alderichoarau.azurequiz.dto.CreateQuizSessionRequest;
 import com.alderichoarau.azurequiz.dto.SubmitAnswerRequest;
 import com.alderichoarau.azurequiz.entity.AnswerOption;
 import com.alderichoarau.azurequiz.entity.Certification;
+import com.alderichoarau.azurequiz.entity.Person;
 import com.alderichoarau.azurequiz.entity.Question;
 import com.alderichoarau.azurequiz.entity.QuizMode;
 import com.alderichoarau.azurequiz.entity.QuizModule;
@@ -18,6 +19,7 @@ import com.alderichoarau.azurequiz.exception.InvalidQuizRequestException;
 import com.alderichoarau.azurequiz.exception.ResourceNotFoundException;
 import com.alderichoarau.azurequiz.repository.AnswerOptionRepository;
 import com.alderichoarau.azurequiz.repository.CertificationRepository;
+import com.alderichoarau.azurequiz.repository.PersonRepository;
 import com.alderichoarau.azurequiz.repository.QuestionContentBlockRepository;
 import com.alderichoarau.azurequiz.repository.QuestionRepository;
 import com.alderichoarau.azurequiz.repository.QuizAnswerRepository;
@@ -45,6 +47,7 @@ class QuizSessionServiceTest {
     @Mock private QuizAnswerRepository quizAnswerRepository;
     @Mock private QuestionContentBlockRepository questionContentBlockRepository;
     @Mock private QuizResultExportService quizResultExportService;
+    @Mock private PersonRepository personRepository;
 
     private QuizSessionService service;
 
@@ -60,13 +63,22 @@ class QuizSessionServiceTest {
                         quizSessionQuestionRepository,
                         quizAnswerRepository,
                         questionContentBlockRepository,
-                        quizResultExportService);
+                        quizResultExportService,
+                        personRepository);
+    }
+
+    private UUID stubPerson() {
+        UUID personId = UUID.randomUUID();
+        when(personRepository.findById(personId))
+                .thenReturn(Optional.of(Person.builder().id(personId).name("Alice").build()));
+        return personId;
     }
 
     @Test
     void createSession_moduleMode_missingModuleId_throwsInvalidRequest() {
+        UUID personId = stubPerson();
         CreateQuizSessionRequest request =
-                new CreateQuizSessionRequest(QuizMode.MODULE, null, null, null);
+                new CreateQuizSessionRequest(QuizMode.MODULE, null, null, null, personId);
 
         assertThatThrownBy(() -> service.createSession(request))
                 .isInstanceOf(InvalidQuizRequestException.class);
@@ -74,10 +86,11 @@ class QuizSessionServiceTest {
 
     @Test
     void createSession_moduleMode_moduleNotFound_throwsResourceNotFound() {
+        UUID personId = stubPerson();
         UUID moduleId = UUID.randomUUID();
         when(moduleRepository.findById(moduleId)).thenReturn(Optional.empty());
         CreateQuizSessionRequest request =
-                new CreateQuizSessionRequest(QuizMode.MODULE, null, moduleId, null);
+                new CreateQuizSessionRequest(QuizMode.MODULE, null, moduleId, null, personId);
 
         assertThatThrownBy(() -> service.createSession(request))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -85,6 +98,7 @@ class QuizSessionServiceTest {
 
     @Test
     void createSession_moduleMode_noActiveQuestions_throwsInvalidRequest() {
+        UUID personId = stubPerson();
         UUID moduleId = UUID.randomUUID();
         Certification certification = Certification.builder().id(UUID.randomUUID()).code("AZ-900").build();
         QuizModule module =
@@ -92,7 +106,7 @@ class QuizSessionServiceTest {
         when(moduleRepository.findById(moduleId)).thenReturn(Optional.of(module));
         when(questionRepository.countByModuleIdAndActiveTrue(moduleId)).thenReturn(0L);
         CreateQuizSessionRequest request =
-                new CreateQuizSessionRequest(QuizMode.MODULE, null, moduleId, null);
+                new CreateQuizSessionRequest(QuizMode.MODULE, null, moduleId, null, personId);
 
         assertThatThrownBy(() -> service.createSession(request))
                 .isInstanceOf(InvalidQuizRequestException.class);
@@ -100,7 +114,9 @@ class QuizSessionServiceTest {
 
     @Test
     void createSession_examMode_missingCertificationId_throwsInvalidRequest() {
-        CreateQuizSessionRequest request = new CreateQuizSessionRequest(QuizMode.EXAM, null, null, null);
+        UUID personId = stubPerson();
+        CreateQuizSessionRequest request =
+                new CreateQuizSessionRequest(QuizMode.EXAM, null, null, null, personId);
 
         assertThatThrownBy(() -> service.createSession(request))
                 .isInstanceOf(InvalidQuizRequestException.class);
@@ -108,15 +124,27 @@ class QuizSessionServiceTest {
 
     @Test
     void createSession_examMode_noQuestionsAvailable_throwsInvalidRequest() {
+        UUID personId = stubPerson();
         UUID certificationId = UUID.randomUUID();
         Certification certification = Certification.builder().id(certificationId).code("AZ-900").build();
         when(certificationRepository.findById(certificationId)).thenReturn(Optional.of(certification));
         when(questionRepository.findRandomActiveByCertification(certificationId, 40)).thenReturn(List.of());
         CreateQuizSessionRequest request =
-                new CreateQuizSessionRequest(QuizMode.EXAM, certificationId, null, null);
+                new CreateQuizSessionRequest(QuizMode.EXAM, certificationId, null, null, personId);
 
         assertThatThrownBy(() -> service.createSession(request))
                 .isInstanceOf(InvalidQuizRequestException.class);
+    }
+
+    @Test
+    void createSession_personNotFound_throwsResourceNotFound() {
+        UUID personId = UUID.randomUUID();
+        when(personRepository.findById(personId)).thenReturn(Optional.empty());
+        CreateQuizSessionRequest request =
+                new CreateQuizSessionRequest(QuizMode.MODULE, null, UUID.randomUUID(), null, personId);
+
+        assertThatThrownBy(() -> service.createSession(request))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
