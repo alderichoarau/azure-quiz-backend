@@ -11,6 +11,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 class GlobalExceptionHandlerTest {
 
@@ -47,5 +48,14 @@ class GlobalExceptionHandlerTest {
         assertThat(result.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
         assertThat(result.getDetail())
                 .isEqualTo("moduleId: must not be null, questionCount: must be positive");
+    }
+
+    @Test
+    void handleMultipart_returns400WithGenericMessage() {
+        ProblemDetail result =
+                handler.handleMultipart(new MaxUploadSizeExceededException(10_000_000L));
+
+        assertThat(result.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+        assertThat(result.getDetail()).isEqualTo("Malformed request body");
     }
 }
