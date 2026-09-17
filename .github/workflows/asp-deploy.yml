@@ -8,7 +8,7 @@
 # owner/environment alone.
 # -----------------------------------------------------------------------------------------------
 name: AZ ASP - Deploy backend application
-run-name: "Deploy backend · ${{ inputs.environment }} · @${{ github.actor }}"
+run-name: "Deploy backend · ${{ inputs.environment }}"
 
 on:
   workflow_dispatch:

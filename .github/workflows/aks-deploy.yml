@@ -10,7 +10,7 @@
 # Switching that var back to false (VNet-only) would break this track again.
 # ─────────────────────────────────────────────────────────────────────────────
 name: AZ AKS - Deploy backend application
-run-name: "Deploy backend (AKS) · ${{ inputs.environment }} · @${{ github.actor }}"
+run-name: "Deploy backend (AKS) · ${{ inputs.environment }}"
 
 on:
   workflow_dispatch:
