@@ -19,8 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  JAVA_VERSION: 21
-  JAVA_DISTRIBUTION: temurin
   MVNW: ${{ github.workspace }}/mvnw
 
 permissions:
@@ -36,14 +34,12 @@ jobs:
       - name: "Checkout repository"
         uses: actions/checkout@v7
 
-      # Documentation: https://github.com/actions/setup-java
       - name: "Setup Java"
         id: setup-java
-        uses: actions/setup-java@v6
+        uses: alderichoarau/gha-actions/setup-java@setup-java-v1
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
+          java-version: "21"
+          distribution: temurin
 
       - name: "Build with Maven"
         if: steps.setup-java.outcome == 'success'

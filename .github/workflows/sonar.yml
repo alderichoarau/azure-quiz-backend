@@ -18,8 +18,6 @@ permissions:
   pull-requests: write
 
 env:
-  JAVA_VERSION: 21
-  JAVA_DISTRIBUTION: temurin
   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   SONAR_PROJECT_KEY: alderichoarau_azure-quiz-backend
   SONAR_ORGANIZATION: alderichoarau
@@ -36,14 +34,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Documentation: https://github.com/actions/setup-java
       - name: "Setup Java"
-        id: setup-java
-        uses: actions/setup-java@v6
+        uses: alderichoarau/gha-actions/setup-java@setup-java-v1
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
+          java-version: "21"
+          distribution: temurin
 
       - name: Cache Sonar packages
         uses: actions/cache@v6

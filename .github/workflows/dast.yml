@@ -24,10 +24,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  JAVA_VERSION: 21
-  JAVA_DISTRIBUTION: temurin
-
 permissions:
   contents: read
 
@@ -40,11 +36,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: "Setup Java"
-        uses: actions/setup-java@v6
+        uses: alderichoarau/gha-actions/setup-java@setup-java-v1
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
+          java-version: "21"
+          distribution: temurin
 
       - name: "Start Postgres / Redis / Azurite"
         run: docker compose up -d postgres redis azurite
