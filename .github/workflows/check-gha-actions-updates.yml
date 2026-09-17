@@ -22,10 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_PAT_WORKFLOWS }}
 
       - name: "Bump outdated alderichoarau/gha-actions references"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT_WORKFLOWS }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
