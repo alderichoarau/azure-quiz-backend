@@ -18,6 +18,7 @@ certifications need no schema change, see "Data model" below).
 [![Security · DAST (OWASP ZAP)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml)
 [![Deploy · App Service](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml)
 [![Deploy · AKS](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml)
+[![GitLab CI](https://gitlab.com/alderichoarau/azure-quiz-backend/badges/main/pipeline.svg)](https://gitlab.com/alderichoarau/azure-quiz-backend/-/pipelines)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
