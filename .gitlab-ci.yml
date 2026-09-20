@@ -1,0 +1,24 @@
+# -----------------------------------------------------------------------------------------------
+# CI only (no CD) -- mirrors the checks from .github/workflows/build-all.yml. Deployment (AKS/App
+# Service) stays on GitHub, driven only from the GitHub side; this pipeline just verifies the
+# mirrored code builds.
+# -----------------------------------------------------------------------------------------------
+stages:
+  - build
+
+image: eclipse-temurin:25-jdk
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+cache:
+  key:
+    files:
+      - pom.xml
+  paths:
+    - .m2/repository
+
+build-test:
+  stage: build
+  script:
+    - ./mvnw -B clean package
