@@ -1,15 +1,20 @@
 # -----------------------------------------------------------------------------------------------
-# CI only (no CD) -- mirrors the checks from .github/workflows/build-all.yml. Deployment (AKS/App
-# Service) stays on GitHub, driven only from the GitHub side; this pipeline just verifies the
-# mirrored code builds.
+# CI only (no CD) -- lean subset of the checks from .github/workflows/build-all.yml. Deployment
+# (AKS/App Service) stays on GitHub. Scoped to "main" only (not every branch) to stay well within
+# Bitbucket's free-tier 50 build-minutes/month.
 # -----------------------------------------------------------------------------------------------
 image: eclipse-temurin:25-jdk
 
 pipelines:
-  default:
-    - step:
-        name: Build & Test
-        caches:
-          - maven
-        script:
-          - ./mvnw -B clean package
+  branches:
+    main:
+      - step:
+          name: Build & Test
+          caches:
+            - maven
+          script:
+            - ./mvnw -B clean package
+          artifacts:
+            - target/*.jar
+            - target/surefire-reports/**
+            - target/site/jacoco/**
