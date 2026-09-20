@@ -60,7 +60,7 @@ Issues and pull requests should be opened on GitHub.
 
 ## Running locally
 
-Prerequisites: JDK 21, Docker (Desktop or Engine) running.
+Prerequisites: JDK 25, Docker (Desktop or Engine) running.
 
 ```bash
 ./mvnw spring-boot:run    # starts the API on http://localhost:8080
