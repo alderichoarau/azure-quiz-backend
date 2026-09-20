@@ -19,7 +19,7 @@ certifications need no schema change, see "Data model" below).
 [![Deploy · App Service](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml)
 [![Deploy · AKS](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml)
 [![GitLab CI](https://gitlab.com/alderichoarau/azure-quiz-backend/badges/main/pipeline.svg)](https://gitlab.com/alderichoarau/azure-quiz-backend/-/pipelines)
-[![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/alderic-hoarau/azure-quiz-backend/main)](https://bitbucket.org/alderic-hoarau/azure-quiz-backend/pipelines)
+[![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/alderic-hoarau/azure-quiz-backend/main?label=Bitbucket%20CI)](https://bitbucket.org/alderic-hoarau/azure-quiz-backend/pipelines)
 
 ## Mirrors
 
