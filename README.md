@@ -18,7 +18,7 @@ certifications need no schema change, see "Data model" below).
 [![Security · DAST (OWASP ZAP)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml)
 [![Deploy · App Service](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml)
 [![Deploy · AKS](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml)
-[![GitLab CI](https://gitlab.com/alderichoarau/azure-quiz-backend/badges/main/pipeline.svg)](https://gitlab.com/alderichoarau/azure-quiz-backend/-/pipelines)
+[![GitLab CI](https://gitlab.com/alderichoarau/azure-quiz-backend/badges/main/pipeline.svg?key_text=GitLab+CI)](https://gitlab.com/alderichoarau/azure-quiz-backend/-/pipelines)
 [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/alderic-hoarau/azure-quiz-backend/main?label=Bitbucket%20CI)](https://bitbucket.org/alderic-hoarau/azure-quiz-backend/pipelines)
 
 ## Mirrors
