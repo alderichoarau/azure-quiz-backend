@@ -1,10 +1,17 @@
 # -----------------------------------------------------------------------------------------------
 # CI only (no CD) -- mirrors the checks from .github/workflows/build-all.yml. Deployment (AKS/App
 # Service) stays on GitHub, driven only from the GitHub side; this pipeline just verifies the
-# mirrored code builds.
+# mirrored code builds. SAST/Secret Detection are GitLab's free-tier native templates (results as
+# pipeline artifacts only, no Vulnerability Report/MR integration -- that needs Ultimate).
+# Dependency Scanning and DAST have no free-tier equivalent, so they're not replicated here.
 # -----------------------------------------------------------------------------------------------
 stages:
+  - test
   - build
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
 
 image: eclipse-temurin:25-jdk
 
