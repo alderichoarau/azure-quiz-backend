@@ -26,8 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: "Mirror to Bitbucket"
-        uses: alderichoarau/gha-mirror-bitbucket@v1
+        uses: alderichoarau/gha-mirror-bitbucket@v2
         with:
-          bitbucket-email: ${{ secrets.BITBUCKET_MIRROR_EMAIL }}
           bitbucket-token: ${{ secrets.BITBUCKET_MIRROR_TOKEN }}
           bitbucket-workspace: alderic-hoarau
