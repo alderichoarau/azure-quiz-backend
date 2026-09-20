@@ -3,23 +3,42 @@
 Spring Boot REST API for the Microsoft Azure certifications revision app (AZ-900, AZ-104 in progress — new
 certifications need no schema change, see "Data model" below).
 
-![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.0-6DB33F?logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1.1-6DB33F?logo=springboot&logoColor=white)
 ![Maven](https://img.shields.io/badge/Maven-C71A36?logo=apachemaven&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
 
-## Last analysis
+## Analysis
+
+### GitHub
+
+**CI**
+
 [![CI · Build all](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/build-all.yml)
 [![Security · SAST (SonarCloud)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sonar.yml)
 [![Security · SCA](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sca.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/sca.yml)
 [![Security · Secrets](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/secrets-scan.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/secrets-scan.yml)
 [![Security · Container & IaC](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/container.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/container.yml)
 [![Security · DAST (OWASP ZAP)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/dast.yml)
+
+**Deploy**
+
 [![Deploy · App Service](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/asp-deploy.yml)
 [![Deploy · AKS](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml/badge.svg)](https://github.com/alderichoarau/azure-quiz-backend/actions/workflows/aks-deploy.yml)
+
+### Mirror
+
 [![GitLab CI](https://img.shields.io/gitlab/pipeline-status/alderichoarau%2Fazure-quiz-backend?branch=main&label=GitLab%20CI&logo=gitlab)](https://gitlab.com/alderichoarau/azure-quiz-backend/-/pipelines)
 [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/alderic-hoarau/azure-quiz-backend/main?label=Bitbucket%20CI&logo=bitbucket)](https://bitbucket.org/alderic-hoarau/azure-quiz-backend/pipelines)
+
+### Sonar
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 
 ## Mirrors
 
@@ -29,15 +48,10 @@ GitHub is the source of truth. This repository is automatically push-mirrored (r
 - [Bitbucket](https://bitbucket.org/alderic-hoarau/azure-quiz-backend)
 
 Issues and pull requests should be opened on GitHub.
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=bugs)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=alderichoarau_azure-quiz-backend&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=alderichoarau_azure-quiz-backend)
 
 ## Stack
 
-- Java 21, Spring Boot 4.1.x, Maven
+- Java 25, Spring Boot 4.1.x, Maven
 - Spring Web, Spring Data JPA, PostgreSQL, Flyway, Bean Validation, Lombok, Actuator
 - Spring Data Redis (cache — see "Running locally" below)
 - Spring Cloud Azure Storage Blob (quiz result export — see "Running locally" below)
