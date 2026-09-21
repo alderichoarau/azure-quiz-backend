@@ -67,7 +67,13 @@ Prerequisites: JDK 25, Docker (Desktop or Engine) running.
 ```
 
 That's it — a plain `./mvnw spring-boot:run`, or hitting "Run" on `AzureQuizBackendApplication` in
-your IDE, is enough on its own. The `spring-boot-docker-compose` dependency (pom.xml) detects
+your IDE, is enough on its own.
+
+A `Makefile` wraps the commands used throughout this section (and testing/building) as shorter
+targets — run `make help` for the full list (`make up`, `make run`, `make test`, `make verify`...).
+It's a convenience on top of what's documented below, not a replacement for understanding it.
+
+The `spring-boot-docker-compose` dependency (pom.xml) detects
 `docker-compose.yml` at the project root and automatically starts Postgres + Redis + Azurite (a
 local Azure Blob Storage emulator) for you before the app context loads, then stops them when the
 app stops — no manual `docker compose up -d` step. It's marked `optional`, so it never ships in the
