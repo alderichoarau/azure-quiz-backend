@@ -10,7 +10,7 @@
 # regardless of who posts it, so this achieves the same "keep it current with main" outcome
 # through Dependabot's own mechanism rather than the update-branch API.
 # -----------------------------------------------------------------------------------------------
-name: "Auto-update PR branches"
+name: "GitHub - Auto-update PR branches"
 run-name: "Auto-update PR branches after merge to main"
 
 on:
