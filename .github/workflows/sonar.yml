@@ -35,7 +35,7 @@ jobs:
           fetch-depth: 0
 
       - name: "Setup Java"
-        uses: alderichoarau/gha-setup-java@v1
+        uses: alderichoarau/gha-setup-java@v2
         with:
           java-version: "25"
           distribution: temurin
