@@ -1,0 +1,43 @@
+# -----------------------------------------------------------------------------------------------
+# Duplicate of build-all.yml, running on the self-hosted runner (runner-prod-1, provisioned by
+# azure-infra-terraform's terraform-runner/ + configured by azure-infra-ansible) instead of
+# ubuntu-latest -- manual trigger only, for comparing timing/behavior side by side before deciding
+# whether to switch build-all.yml itself over. Not a required check.
+# -----------------------------------------------------------------------------------------------
+name: "CI - Build & Test (self-hosted)"
+run-name: CI - Run maven Build & Test (self-hosted)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+env:
+  MVNW: ${{ github.workspace }}/mvnw
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  build-and-test:
+    runs-on: [self-hosted, linux, x64, azure]
+    steps:
+      # Documentation: https://github.com/actions/checkout
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Setup Java"
+        id: setup-java
+        uses: alderichoarau/gha-setup-java@v2
+        with:
+          java-version: "25"
+          distribution: temurin
+
+      - name: "Build with Maven"
+        if: steps.setup-java.outcome == 'success'
+        run: |
+          ${MVNW} -B clean package
