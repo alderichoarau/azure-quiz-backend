@@ -8,6 +8,7 @@ certifications need no schema change, see "Data model" below).
 ![Maven](https://img.shields.io/badge/Maven-C71A36?logo=apachemaven&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)
+<!-- deps-badge --> ![Dependencies](https://img.shields.io/badge/dependencies-not_yet_updated-lightgrey)
 
 ## Analysis
 
