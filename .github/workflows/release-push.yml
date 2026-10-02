@@ -45,37 +45,55 @@ jobs:
 
       - name: "Resolve tag name and target environment"
         id: tag
+        # inputs.tag / head.ref are chosen by whoever triggers the workflow or names the branch, so
+        # they go through env vars (never interpolated into the script text -- that would be script
+        # injection) and are format-checked before being written to $GITHUB_OUTPUT (a value with a
+        # newline could otherwise forge extra outputs).
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "name=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-            echo "environment=${{ inputs.environment }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="$INPUT_TAG"
+            environment="$INPUT_ENVIRONMENT"
           else
-            echo "name=${GITHUB_HEAD_REF#release/}" >> "$GITHUB_OUTPUT"
-            echo "environment=prod" >> "$GITHUB_OUTPUT"
+            tag="${HEAD_REF#release/}"
+            environment="prod"
           fi
+          if ! [[ "$tag" =~ ^[A-Za-z0-9._-]+$ && "$environment" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::Invalid tag or environment name, refusing to continue."
+            exit 1
+          fi
+          echo "name=$tag" >> "$GITHUB_OUTPUT"
+          echo "environment=$environment" >> "$GITHUB_OUTPUT"
         env:
-          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_ENVIRONMENT: ${{ inputs.environment }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
 
       - name: "Create and push tag"
         if: github.event_name != 'workflow_dispatch'
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.tag.outputs.name }}"
-          git push origin "${{ steps.tag.outputs.name }}"
+          git tag "$TAG"
+          git push origin "$TAG"
 
       - name: "Create GitHub release"
         if: github.event_name != 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.name }}
         run: |
-          gh release create "${{ steps.tag.outputs.name }}" \
-            --title "${{ steps.tag.outputs.name }}" \
+          gh release create "$TAG" \
+            --title "$TAG" \
             --generate-notes
 
       - name: "Trigger AKS + App Service deploys"
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.name }}
+          TARGET_ENV: ${{ steps.tag.outputs.environment }}
         run: |
           # Releases created with GITHUB_TOKEN don't emit events that trigger other workflows, so
           # both deploy workflows are dispatched explicitly here, pinned to this tag. This only
@@ -83,13 +101,19 @@ jobs:
           # required-reviewer rule (repo Settings > Environments), which both aks-deploy.yml and
           # asp-deploy.yml's deploy jobs target (`environment: ${{ inputs.environment }}`): each
           # run pauses there for manual approval before anything actually deploys.
-          gh workflow run aks-deploy.yml --ref "${{ steps.tag.outputs.name }}" -f environment=${{ steps.tag.outputs.environment }}
-          gh workflow run asp-deploy.yml --ref "${{ steps.tag.outputs.name }}" -f environment=${{ steps.tag.outputs.environment }}
+          gh workflow run aks-deploy.yml --ref "$TAG" -f environment="$TARGET_ENV"
+          gh workflow run asp-deploy.yml --ref "$TAG" -f environment="$TARGET_ENV"
 
       - name: "Job summary"
         if: always()
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
+          TARGET_ENV: ${{ steps.tag.outputs.environment }}
+          ACTOR: ${{ github.actor }}
         run: |
-          echo "## Release pushed — ${{ steps.tag.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Tag** : ${{ steps.tag.outputs.name }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Deploy triggered for** : ${{ steps.tag.outputs.environment }} (AKS + App Service) — awaiting manual approval on that environment before either actually runs" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Actor** : @${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Release pushed — $TAG"
+            echo "- **Tag** : $TAG"
+            echo "- **Deploy triggered for** : $TARGET_ENV (AKS + App Service) — awaiting manual approval on that environment before either actually runs"
+            echo "- **Actor** : @$ACTOR"
+          } >> "$GITHUB_STEP_SUMMARY"
