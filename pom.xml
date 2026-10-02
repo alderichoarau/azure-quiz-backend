@@ -23,6 +23,12 @@
 		     bypass, found by sca.yml) fixed in 11.0.25. Drop this override once the parent BOM
 		     catches up. -->
 		<tomcat.version>11.0.25</tomcat.version>
+		<!-- spring-boot-starter-parent:4.1.1 manages Jackson 2.21.5 / 3.1.5, which have 10 HIGH CVEs
+		     (DoS via regex backtracking, unbounded StringBuilder/cache growth, found by Trivy in
+		     container.yml) fixed in 2.21.7 / 3.1.7. Note the BOM's naming: jackson-2-bom is the
+		     2.x line, jackson-bom is 3.x. Drop these overrides once the parent BOM catches up. -->
+		<jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+		<jackson-bom.version>3.1.7</jackson-bom.version>
 		<!-- AZURE -->
 		<spring-cloud-azure-dependencies.version>7.4.0</spring-cloud-azure-dependencies.version>
 		<azure-functions-maven-plugin.version>1.42.0</azure-functions-maven-plugin.version>

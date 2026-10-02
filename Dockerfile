@@ -29,6 +29,15 @@ RUN ./mvnw -B clean package -DskipTests
 FROM eclipse-temurin:25-jre-jammy
 WORKDIR /app
 
+# libssl3 CVE-2026-84782 (HIGH, found by Trivy in container.yml): Ubuntu jammy-security already
+# ships the fix (3.0.2-0ubuntu1.30) but the eclipse-temurin base image hasn't been rebuilt with
+# it yet. Upgrade only that package (not a blanket `apt-get upgrade`, to keep the image
+# predictable), as root, before dropping to the non-root user below. Drop this once a fresh
+# base image carries the fix (re-run the Trivy scan without it to check).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
 # Runs as non-root -- AKS's default Pod Security Standards (baseline/restricted,
 # commonly enforced via namespace labels) reject containers that try to run as
 # UID 0.
