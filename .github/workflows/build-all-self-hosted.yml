@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   build-and-test:
-    runs-on: [self-hosted, linux, x64, azure]
+    runs-on: [self-hosted, Linux, X64]
     steps:
       # Documentation: https://github.com/actions/checkout
       - name: "Checkout repository"
